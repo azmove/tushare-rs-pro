@@ -10,8 +10,12 @@
 
 #[cfg(feature = "chrono")]
 mod chrono_example {
-    use tushare_api::{DeriveFromTushareData, traits::{FromTushareValue, FromOptionalTushareValue}, error::TushareError};
     use serde_json::Value;
+    use tushare_api::{
+        DeriveFromTushareData,
+        error::TushareError,
+        traits::{FromOptionalTushareValue, FromTushareValue},
+    };
 
     /// Custom date wrapper that supports multiple input formats
     #[derive(Debug, Clone)]
@@ -31,7 +35,7 @@ mod chrono_example {
                         chrono::NaiveDate::from_tushare_value(value).map(CustomDate)
                     }
                 }
-                _ => chrono::NaiveDate::from_tushare_value(value).map(CustomDate)
+                _ => chrono::NaiveDate::from_tushare_value(value).map(CustomDate),
             }
         }
     }
@@ -40,7 +44,7 @@ mod chrono_example {
         fn from_optional_tushare_value(value: &Value) -> Result<Option<Self>, TushareError> {
             match value {
                 Value::Null => Ok(None),
-                _ => CustomDate::from_tushare_value(value).map(Some)
+                _ => CustomDate::from_tushare_value(value).map(Some),
             }
         }
     }
@@ -56,7 +60,9 @@ mod chrono_example {
                     // Parse YYYYMMDD format specifically
                     chrono::NaiveDate::parse_from_str(s, "%Y%m%d")
                         .map(TushareDate)
-                        .map_err(|e| TushareError::ParseError(format!("Failed to parse date '{}': {}", s, e)))
+                        .map_err(|e| {
+                            TushareError::ParseError(format!("Failed to parse date '{}': {}", s, e))
+                        })
                 }
                 Value::Number(n) => {
                     if let Some(date_int) = n.as_u64() {
@@ -64,15 +70,27 @@ mod chrono_example {
                         if date_str.len() == 8 {
                             chrono::NaiveDate::parse_from_str(&date_str, "%Y%m%d")
                                 .map(TushareDate)
-                                .map_err(|e| TushareError::ParseError(format!("Failed to parse date '{}': {}", date_str, e)))
+                                .map_err(|e| {
+                                    TushareError::ParseError(format!(
+                                        "Failed to parse date '{}': {}",
+                                        date_str, e
+                                    ))
+                                })
                         } else {
-                            Err(TushareError::ParseError(format!("Invalid date format: {}", date_int)))
+                            Err(TushareError::ParseError(format!(
+                                "Invalid date format: {}",
+                                date_int
+                            )))
                         }
                     } else {
-                        Err(TushareError::ParseError("Date must be a valid integer".to_string()))
+                        Err(TushareError::ParseError(
+                            "Date must be a valid integer".to_string(),
+                        ))
                     }
                 }
-                _ => Err(TushareError::ParseError("Date must be a string or number".to_string()))
+                _ => Err(TushareError::ParseError(
+                    "Date must be a string or number".to_string(),
+                )),
             }
         }
     }
@@ -81,7 +99,7 @@ mod chrono_example {
         fn from_optional_tushare_value(value: &Value) -> Result<Option<Self>, TushareError> {
             match value {
                 Value::Null => Ok(None),
-                _ => TushareDate::from_tushare_value(value).map(Some)
+                _ => TushareDate::from_tushare_value(value).map(Some),
             }
         }
     }
@@ -91,31 +109,31 @@ mod chrono_example {
     pub struct CustomDateFormats {
         #[tushare(field = "ts_code")]
         pub stock_code: String,
-        
+
         // Standard date format (auto-detected: YYYYMMDD, YYYY-MM-DD, etc.)
         #[tushare(field = "trade_date")]
         pub trade_date: chrono::NaiveDate,
-        
+
         // European date format: DD/MM/YYYY
         #[tushare(field = "european_date", date_format = "%d/%m/%Y")]
         pub european_date: chrono::NaiveDate,
-        
+
         // US date format: MM-DD-YYYY
         #[tushare(field = "us_date", date_format = "%m-%d-%Y")]
         pub us_date: chrono::NaiveDate,
-        
+
         // German date format: DD.MM.YYYY
         #[tushare(field = "german_date", date_format = "%d.%m.%Y")]
         pub german_date: Option<chrono::NaiveDate>,
-        
+
         // Custom datetime format: YYYY/MM/DD HH:MM
         #[tushare(field = "custom_datetime", date_format = "%Y/%m/%d %H:%M")]
         pub custom_datetime: chrono::NaiveDateTime,
-        
+
         // Chinese date format: YYYY年MM月DD日
         #[tushare(field = "chinese_date", date_format = "%Y年%m月%d日")]
         pub chinese_date: Option<chrono::NaiveDate>,
-        
+
         // UTC datetime format: YYYY-MM-DD HH:MM:SS +ZZZZ
         #[tushare(field = "utc_datetime", date_format = "%Y-%m-%d %H:%M:%S %z")]
         pub utc_datetime: chrono::DateTime<chrono::Utc>,
@@ -124,37 +142,34 @@ mod chrono_example {
     pub fn run_example() {
         println!("Custom Date Format Example");
         println!("==========================");
-        
+
         // Test custom date parsing
         use serde_json::json;
-        
+
         // Test CustomDate with different formats
         let date_values = [
-            json!("15/03/2024"),  // European format
-            json!("03-15-2024"),  // US format
-            json!("20240315"),    // YYYYMMDD format
+            json!("15/03/2024"), // European format
+            json!("03-15-2024"), // US format
+            json!("20240315"),   // YYYYMMDD format
         ];
-        
+
         for date_value in &date_values {
             match chrono::NaiveDate::from_tushare_value(date_value) {
                 Ok(date) => println!("Parsed date: {} -> {}", date_value, date),
                 Err(e) => println!("Failed to parse {}: {}", date_value, e),
             }
         }
-        
+
         // Test TushareDate with YYYYMMDD format
-        let tushare_dates = [
-            json!("20240315"),
-            json!(20240315),
-        ];
-        
+        let tushare_dates = [json!("20240315"), json!(20240315)];
+
         for date_value in &tushare_dates {
             match TushareDate::from_tushare_value(date_value) {
                 Ok(date) => println!("Parsed Tushare date: {} -> {:?}", date_value, date),
                 Err(e) => println!("Failed to parse Tushare date {}: {}", date_value, e),
             }
         }
-        
+
         println!();
         println!("Custom Date Format Attributes:");
         println!("==============================");
@@ -174,7 +189,7 @@ fn main() {
     {
         chrono_example::run_example();
     }
-    
+
     #[cfg(not(feature = "chrono"))]
     {
         println!("Custom Date Format Example");

@@ -119,7 +119,8 @@ impl TushareClientEx {
     {
         let request = request.try_into().map_err(Into::into)?;
 
-        self.apply_api_min_interval_rate_limit(&request.api_name.name()).await;
+        self.apply_api_min_interval_rate_limit(&request.api_name.name())
+            .await;
 
         self.call_api_with_retry(request).await
     }
@@ -198,7 +199,11 @@ impl TushareClientEx {
         let wait = {
             let mut guard = self.api_next_allowed_at.lock().await;
             let next_allowed_at = guard.get(api_name).copied().unwrap_or(now);
-            let base = if next_allowed_at > now { next_allowed_at } else { now };
+            let base = if next_allowed_at > now {
+                next_allowed_at
+            } else {
+                now
+            };
             guard.insert(api_name.to_string(), base + min_interval);
             if base > now {
                 base - now
@@ -214,17 +219,18 @@ impl TushareClientEx {
 }
 
 fn is_retryable_error(err: &TushareError) -> bool {
-    matches!(
-        err,
-        TushareError::HttpError(_) | TushareError::TimeoutError
-    )
+    matches!(err, TushareError::HttpError(_) | TushareError::TimeoutError)
 }
 
 fn compute_backoff_delay(cfg: &RetryConfig, attempt: usize) -> Duration {
     let shift = attempt.min(31) as u32;
     let factor = 1u64.checked_shl(shift).unwrap_or(u64::MAX);
     let base = cfg.base_delay.saturating_mul(factor as u32);
-    let capped = if base > cfg.max_delay { cfg.max_delay } else { base };
+    let capped = if base > cfg.max_delay {
+        cfg.max_delay
+    } else {
+        base
+    };
 
     // Equal jitter: capped/2 + random(0..=capped/2)
     // Compared to full jitter, this is less volatile while still spreading retries.
@@ -237,4 +243,3 @@ fn compute_backoff_delay(cfg: &RetryConfig, attempt: usize) -> Duration {
     let jitter_ms = rand::thread_rng().gen_range(0..=half);
     Duration::from_millis(half + jitter_ms)
 }
-

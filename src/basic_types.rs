@@ -2,9 +2,9 @@
 //!
 //! This module provides implementations of the conversion traits for all standard Rust primitive types.
 
-use serde_json::Value;
 use crate::error::TushareError;
-use crate::traits::{FromTushareValue, FromOptionalTushareValue};
+use crate::traits::{FromOptionalTushareValue, FromTushareValue};
+use serde_json::Value;
 
 // =============================================================================
 // FromTushareValue implementations for basic types
@@ -18,7 +18,8 @@ impl FromTushareValue for String {
             Value::Bool(b) => Ok(b.to_string()),
             Value::Null => Ok(String::new()),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to String", value
+                "Cannot convert {:?} to String",
+                value
             ))),
         }
     }
@@ -27,14 +28,15 @@ impl FromTushareValue for String {
 impl FromTushareValue for f64 {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_f64().ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to f64", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as f64", s))
-            }),
+            Value::Number(n) => n
+                .as_f64()
+                .ok_or_else(|| TushareError::ParseError(format!("Cannot convert {:?} to f64", n))),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as f64", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to f64", value
+                "Cannot convert {:?} to f64",
+                value
             ))),
         }
     }
@@ -43,20 +45,22 @@ impl FromTushareValue for f64 {
 impl FromTushareValue for f32 {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_f64().and_then(|f| {
-                if f.is_finite() && f >= f32::MIN as f64 && f <= f32::MAX as f64 {
-                    Some(f as f32)
-                } else {
-                    None
-                }
-            }).ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to f32", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as f32", s))
-            }),
+            Value::Number(n) => n
+                .as_f64()
+                .and_then(|f| {
+                    if f.is_finite() && f >= f32::MIN as f64 && f <= f32::MAX as f64 {
+                        Some(f as f32)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| TushareError::ParseError(format!("Cannot convert {:?} to f32", n))),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as f32", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to f32", value
+                "Cannot convert {:?} to f32",
+                value
             ))),
         }
     }
@@ -65,14 +69,15 @@ impl FromTushareValue for f32 {
 impl FromTushareValue for i64 {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_i64().ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to i64", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as i64", s))
-            }),
+            Value::Number(n) => n
+                .as_i64()
+                .ok_or_else(|| TushareError::ParseError(format!("Cannot convert {:?} to i64", n))),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as i64", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to i64", value
+                "Cannot convert {:?} to i64",
+                value
             ))),
         }
     }
@@ -81,20 +86,22 @@ impl FromTushareValue for i64 {
 impl FromTushareValue for i32 {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_i64().and_then(|i| {
-                if i >= i32::MIN as i64 && i <= i32::MAX as i64 {
-                    Some(i as i32)
-                } else {
-                    None
-                }
-            }).ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to i32", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as i32", s))
-            }),
+            Value::Number(n) => n
+                .as_i64()
+                .and_then(|i| {
+                    if i >= i32::MIN as i64 && i <= i32::MAX as i64 {
+                        Some(i as i32)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| TushareError::ParseError(format!("Cannot convert {:?} to i32", n))),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as i32", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to i32", value
+                "Cannot convert {:?} to i32",
+                value
             ))),
         }
     }
@@ -103,20 +110,22 @@ impl FromTushareValue for i32 {
 impl FromTushareValue for i16 {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_i64().and_then(|i| {
-                if i >= i16::MIN as i64 && i <= i16::MAX as i64 {
-                    Some(i as i16)
-                } else {
-                    None
-                }
-            }).ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to i16", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as i16", s))
-            }),
+            Value::Number(n) => n
+                .as_i64()
+                .and_then(|i| {
+                    if i >= i16::MIN as i64 && i <= i16::MAX as i64 {
+                        Some(i as i16)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| TushareError::ParseError(format!("Cannot convert {:?} to i16", n))),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as i16", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to i16", value
+                "Cannot convert {:?} to i16",
+                value
             ))),
         }
     }
@@ -125,20 +134,22 @@ impl FromTushareValue for i16 {
 impl FromTushareValue for i8 {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_i64().and_then(|i| {
-                if i >= i8::MIN as i64 && i <= i8::MAX as i64 {
-                    Some(i as i8)
-                } else {
-                    None
-                }
-            }).ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to i8", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as i8", s))
-            }),
+            Value::Number(n) => n
+                .as_i64()
+                .and_then(|i| {
+                    if i >= i8::MIN as i64 && i <= i8::MAX as i64 {
+                        Some(i as i8)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| TushareError::ParseError(format!("Cannot convert {:?} to i8", n))),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as i8", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to i8", value
+                "Cannot convert {:?} to i8",
+                value
             ))),
         }
     }
@@ -147,14 +158,15 @@ impl FromTushareValue for i8 {
 impl FromTushareValue for u64 {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_u64().ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to u64", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as u64", s))
-            }),
+            Value::Number(n) => n
+                .as_u64()
+                .ok_or_else(|| TushareError::ParseError(format!("Cannot convert {:?} to u64", n))),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as u64", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to u64", value
+                "Cannot convert {:?} to u64",
+                value
             ))),
         }
     }
@@ -163,20 +175,22 @@ impl FromTushareValue for u64 {
 impl FromTushareValue for u32 {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_u64().and_then(|u| {
-                if u <= u32::MAX as u64 {
-                    Some(u as u32)
-                } else {
-                    None
-                }
-            }).ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to u32", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as u32", s))
-            }),
+            Value::Number(n) => n
+                .as_u64()
+                .and_then(|u| {
+                    if u <= u32::MAX as u64 {
+                        Some(u as u32)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| TushareError::ParseError(format!("Cannot convert {:?} to u32", n))),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as u32", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to u32", value
+                "Cannot convert {:?} to u32",
+                value
             ))),
         }
     }
@@ -185,20 +199,22 @@ impl FromTushareValue for u32 {
 impl FromTushareValue for u16 {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_u64().and_then(|u| {
-                if u <= u16::MAX as u64 {
-                    Some(u as u16)
-                } else {
-                    None
-                }
-            }).ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to u16", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as u16", s))
-            }),
+            Value::Number(n) => n
+                .as_u64()
+                .and_then(|u| {
+                    if u <= u16::MAX as u64 {
+                        Some(u as u16)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| TushareError::ParseError(format!("Cannot convert {:?} to u16", n))),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as u16", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to u16", value
+                "Cannot convert {:?} to u16",
+                value
             ))),
         }
     }
@@ -207,20 +223,22 @@ impl FromTushareValue for u16 {
 impl FromTushareValue for u8 {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_u64().and_then(|u| {
-                if u <= u8::MAX as u64 {
-                    Some(u as u8)
-                } else {
-                    None
-                }
-            }).ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to u8", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as u8", s))
-            }),
+            Value::Number(n) => n
+                .as_u64()
+                .and_then(|u| {
+                    if u <= u8::MAX as u64 {
+                        Some(u as u8)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| TushareError::ParseError(format!("Cannot convert {:?} to u8", n))),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as u8", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to u8", value
+                "Cannot convert {:?} to u8",
+                value
             ))),
         }
     }
@@ -229,20 +247,24 @@ impl FromTushareValue for u8 {
 impl FromTushareValue for usize {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_u64().and_then(|u| {
-                if u <= usize::MAX as u64 {
-                    Some(u as usize)
-                } else {
-                    None
-                }
-            }).ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to usize", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as usize", s))
-            }),
+            Value::Number(n) => n
+                .as_u64()
+                .and_then(|u| {
+                    if u <= usize::MAX as u64 {
+                        Some(u as usize)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| {
+                    TushareError::ParseError(format!("Cannot convert {:?} to usize", n))
+                }),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as usize", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to usize", value
+                "Cannot convert {:?} to usize",
+                value
             ))),
         }
     }
@@ -251,20 +273,24 @@ impl FromTushareValue for usize {
 impl FromTushareValue for isize {
     fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
         match value {
-            Value::Number(n) => n.as_i64().and_then(|i| {
-                if i >= isize::MIN as i64 && i <= isize::MAX as i64 {
-                    Some(i as isize)
-                } else {
-                    None
-                }
-            }).ok_or_else(|| {
-                TushareError::ParseError(format!("Cannot convert {:?} to isize", n))
-            }),
-            Value::String(s) => s.parse().map_err(|_| {
-                TushareError::ParseError(format!("Cannot parse '{}' as isize", s))
-            }),
+            Value::Number(n) => n
+                .as_i64()
+                .and_then(|i| {
+                    if i >= isize::MIN as i64 && i <= isize::MAX as i64 {
+                        Some(i as isize)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| {
+                    TushareError::ParseError(format!("Cannot convert {:?} to isize", n))
+                }),
+            Value::String(s) => s
+                .parse()
+                .map_err(|_| TushareError::ParseError(format!("Cannot parse '{}' as isize", s))),
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to isize", value
+                "Cannot convert {:?} to isize",
+                value
             ))),
         }
     }
@@ -278,7 +304,8 @@ impl FromTushareValue for bool {
                 "true" | "1" | "yes" | "y" => Ok(true),
                 "false" | "0" | "no" | "n" | "" => Ok(false),
                 _ => Err(TushareError::ParseError(format!(
-                    "Cannot parse '{}' as bool", s
+                    "Cannot parse '{}' as bool",
+                    s
                 ))),
             },
             Value::Number(n) => {
@@ -288,12 +315,14 @@ impl FromTushareValue for bool {
                     Ok(f != 0.0)
                 } else {
                     Err(TushareError::ParseError(format!(
-                        "Cannot convert {:?} to bool", n
+                        "Cannot convert {:?} to bool",
+                        n
                     )))
                 }
-            },
+            }
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to bool", value
+                "Cannot convert {:?} to bool",
+                value
             ))),
         }
     }
@@ -310,7 +339,7 @@ impl FromOptionalTushareValue for String {
         } else {
             match value {
                 Value::String(s) if s.is_empty() => Ok(None),
-                _ => String::from_tushare_value(value).map(Some)
+                _ => String::from_tushare_value(value).map(Some),
             }
         }
     }
@@ -456,14 +485,15 @@ impl FromTushareValue for char {
                 match (chars.next(), chars.next()) {
                     (Some(c), None) => Ok(c), // Exactly one character
                     (Some(_), Some(_)) => Err(TushareError::ParseError(format!(
-                        "String '{}' contains more than one character", s
+                        "String '{}' contains more than one character",
+                        s
                     ))),
                     (None, None) => Err(TushareError::ParseError(
-                        "Cannot convert empty string to char".to_string()
+                        "Cannot convert empty string to char".to_string(),
                     )),
                     (None, Some(_)) => unreachable!("This case is impossible"),
                 }
-            },
+            }
             Value::Number(n) => {
                 if let Some(i) = n.as_u64() {
                     if i <= u32::MAX as u64 {
@@ -472,17 +502,20 @@ impl FromTushareValue for char {
                         })
                     } else {
                         Err(TushareError::ParseError(format!(
-                            "Number {} is too large for Unicode code point", i
+                            "Number {} is too large for Unicode code point",
+                            i
                         )))
                     }
                 } else {
                     Err(TushareError::ParseError(format!(
-                        "Cannot convert {:?} to char", n
+                        "Cannot convert {:?} to char",
+                        n
                     )))
                 }
-            },
+            }
             _ => Err(TushareError::ParseError(format!(
-                "Cannot convert {:?} to char", value
+                "Cannot convert {:?} to char",
+                value
             ))),
         }
     }

@@ -1,12 +1,12 @@
-use reqwest::Client;
-use std::time::{Duration, Instant};
-use std::collections::HashMap;
-use crate::error::{TushareError, TushareResult};
-use crate::types::{TushareRequest, TushareResponse, TushareEntityList};
 use crate::api::{Api, serialize_api_name};
+use crate::error::{TushareError, TushareResult};
 use crate::logging::{LogConfig, LogLevel, Logger};
-use serde::{Serialize};
+use crate::types::{TushareEntityList, TushareRequest, TushareResponse};
+use reqwest::Client;
+use serde::Serialize;
 use serde_json;
+use std::collections::HashMap;
+use std::time::{Duration, Instant};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// HTTP client configuration for reqwest::Client
@@ -33,11 +33,11 @@ impl Default for HttpClientConfig {
         Self {
             connect_timeout: Duration::from_secs(10),
             timeout: Duration::from_secs(30),
-            pool_max_idle_per_host: 20,  // Increased for better performance
-            pool_idle_timeout: Duration::from_secs(90),  // Longer idle timeout
+            pool_max_idle_per_host: 20, // Increased for better performance
+            pool_idle_timeout: Duration::from_secs(90), // Longer idle timeout
             user_agent: Some("tushare-api-rust/1.0.0".to_string()),
-            tcp_nodelay: true,  // Reduce latency
-            tcp_keepalive: Some(Duration::from_secs(60)),  // Keep connections alive
+            tcp_nodelay: true,                            // Reduce latency
+            tcp_keepalive: Some(Duration::from_secs(60)), // Keep connections alive
         }
     }
 }
@@ -47,49 +47,49 @@ impl HttpClientConfig {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     /// Set connection timeout
     pub fn with_connect_timeout(mut self, timeout: Duration) -> Self {
         self.connect_timeout = timeout;
         self
     }
-    
+
     /// Set request timeout
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
     }
-    
+
     /// Set maximum idle connections per host
     pub fn with_pool_max_idle_per_host(mut self, max_idle: usize) -> Self {
         self.pool_max_idle_per_host = max_idle;
         self
     }
-    
+
     /// Set pool idle timeout
     pub fn with_pool_idle_timeout(mut self, timeout: Duration) -> Self {
         self.pool_idle_timeout = timeout;
         self
     }
-    
+
     /// Set user agent string
     pub fn with_user_agent<S: Into<String>>(mut self, user_agent: S) -> Self {
         self.user_agent = Some(user_agent.into());
         self
     }
-    
+
     /// Enable or disable TCP_NODELAY
     pub fn with_tcp_nodelay(mut self, enabled: bool) -> Self {
         self.tcp_nodelay = enabled;
         self
     }
-    
+
     /// Set TCP keep-alive duration
     pub fn with_tcp_keepalive(mut self, duration: Option<Duration>) -> Self {
         self.tcp_keepalive = duration;
         self
     }
-    
+
     /// Build reqwest::Client with this configuration
     pub(crate) fn build_client(&self) -> Result<Client, reqwest::Error> {
         let mut builder = Client::builder()
@@ -98,15 +98,15 @@ impl HttpClientConfig {
             .pool_max_idle_per_host(self.pool_max_idle_per_host)
             .pool_idle_timeout(self.pool_idle_timeout)
             .tcp_nodelay(self.tcp_nodelay);
-            
+
         if let Some(ref user_agent) = self.user_agent {
             builder = builder.user_agent(user_agent);
         }
-        
+
         if let Some(keepalive) = self.tcp_keepalive {
             builder = builder.tcp_keepalive(keepalive);
         }
-        
+
         builder.build()
     }
 }
@@ -171,19 +171,19 @@ impl TushareClientBuilder {
         self.http_config = self.http_config.with_timeout(timeout);
         self
     }
-    
+
     /// Set HTTP client configuration
     pub fn with_http_config(mut self, http_config: HttpClientConfig) -> Self {
         self.http_config = http_config;
         self
     }
-    
+
     /// Set maximum idle connections per host
     pub fn with_pool_max_idle_per_host(mut self, max_idle: usize) -> Self {
         self.http_config = self.http_config.with_pool_max_idle_per_host(max_idle);
         self
     }
-    
+
     /// Set pool idle timeout
     pub fn with_pool_idle_timeout(mut self, timeout: Duration) -> Self {
         self.http_config = self.http_config.with_pool_idle_timeout(timeout);
@@ -227,8 +227,10 @@ impl TushareClientBuilder {
 
     pub fn build(self) -> TushareResult<TushareClient> {
         let token = self.token.ok_or(TushareError::InvalidToken)?;
-        
-        let client = self.http_config.build_client()
+
+        let client = self
+            .http_config
+            .build_client()
             .map_err(TushareError::HttpError)?;
 
         Ok(TushareClient {
@@ -249,19 +251,17 @@ impl TushareClient {
         &self.logger
     }
 
-
-
     /// Create a new Tushare client with default timeout settings
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `token` - Tushare API Token
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use tushare_api::TushareClient;
-    /// 
+    ///
     /// let client = TushareClient::new("your_token_here");
     /// ```
     pub fn new(token: &str) -> Self {
@@ -269,16 +269,16 @@ impl TushareClient {
     }
 
     /// Create a new Tushare client from TUSHARE_TOKEN environment variable with default timeout settings
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// Returns `TushareError::InvalidToken` if TUSHARE_TOKEN environment variable does not exist or is empty
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust,no_run
     /// use tushare_api::{TushareClient, TushareResult};
-    /// 
+    ///
     /// // Requires TUSHARE_TOKEN environment variable to be set
     /// let client = TushareClient::from_env()?;
     /// # Ok::<(), tushare_api::TushareError>(())
@@ -288,31 +288,31 @@ impl TushareClient {
             .map_err(|_| TushareError::InvalidToken)?
             .trim()
             .to_string();
-        
+
         if token.is_empty() {
             return Err(TushareError::InvalidToken);
         }
-        
+
         Ok(Self::new(&token))
     }
 
     /// Create a new Tushare client from TUSHARE_TOKEN environment variable with custom timeout settings
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `connect_timeout` - Connection timeout duration
     /// * `timeout` - Request timeout duration
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// Returns `TushareError::InvalidToken` if TUSHARE_TOKEN environment variable does not exist or is empty
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust,no_run
     /// use tushare_api::{TushareClient, TushareResult};
     /// use std::time::Duration;
-    /// 
+    ///
     /// // Requires TUSHARE_TOKEN environment variable to be set
     /// let client = TushareClient::from_env_with_timeout(
     ///     Duration::from_secs(5),  // Connection timeout 5 seconds
@@ -320,33 +320,36 @@ impl TushareClient {
     /// )?;
     /// # Ok::<(), tushare_api::TushareError>(())
     /// ```
-    pub fn from_env_with_timeout(connect_timeout: Duration, timeout: Duration) -> TushareResult<Self> {
+    pub fn from_env_with_timeout(
+        connect_timeout: Duration,
+        timeout: Duration,
+    ) -> TushareResult<Self> {
         let token = std::env::var("TUSHARE_TOKEN")
             .map_err(|_| TushareError::InvalidToken)?
             .trim()
             .to_string();
-        
+
         if token.is_empty() {
             return Err(TushareError::InvalidToken);
         }
-        
+
         Ok(Self::with_timeout(&token, connect_timeout, timeout))
     }
 
     /// Create a new Tushare client with custom timeout settings
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `token` - Tushare API Token
     /// * `connect_timeout` - Connection timeout duration
     /// * `timeout` - Request timeout duration
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use tushare_api::TushareClient;
     /// use std::time::Duration;
-    /// 
+    ///
     /// let client = TushareClient::with_timeout(
     ///     "your_token_here",
     ///     Duration::from_secs(5),  // Connection timeout 5 seconds
@@ -357,8 +360,9 @@ impl TushareClient {
         let http_config = HttpClientConfig::new()
             .with_connect_timeout(connect_timeout)
             .with_timeout(timeout);
-            
-        let client = http_config.build_client()
+
+        let client = http_config
+            .build_client()
             .expect("Failed to create HTTP client");
 
         TushareClient {
@@ -369,20 +373,20 @@ impl TushareClient {
     }
 
     /// Call Tushare API with flexible string types support
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `request` - API request parameters, supports direct use of string literals
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// Returns API response result
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use tushare_api::{TushareClient, TushareRequest, Api, params, fields, request};
-    /// 
+    ///
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     ///     let client = TushareClient::new("your_token_here");
     ///     
@@ -403,16 +407,19 @@ impl TushareClient {
         for<'a> &'a T: TryInto<TushareRequest>,
         for<'a> <&'a T as TryInto<TushareRequest>>::Error: Into<TushareError>,
     {
-        let request = request
-            .try_into()
-            .map_err(Into::into)?;
+        let request = request.try_into().map_err(Into::into)?;
         let request_id = generate_request_id();
-        self.call_api_inner_with_request_id(&request_id, &request).await
+        self.call_api_inner_with_request_id(&request_id, &request)
+            .await
     }
 
-    pub(crate) async fn call_api_request(&self, request: &TushareRequest) -> TushareResult<TushareResponse> {
+    pub(crate) async fn call_api_request(
+        &self,
+        request: &TushareRequest,
+    ) -> TushareResult<TushareResponse> {
         let request_id = generate_request_id();
-        self.call_api_inner_with_request_id(&request_id, request).await
+        self.call_api_inner_with_request_id(&request_id, request)
+            .await
     }
 
     pub(crate) async fn call_api_request_with_request_id(
@@ -420,7 +427,8 @@ impl TushareClient {
         request_id: &str,
         request: &TushareRequest,
     ) -> TushareResult<TushareResponse> {
-        self.call_api_inner_with_request_id(request_id, request).await
+        self.call_api_inner_with_request_id(request_id, request)
+            .await
     }
 
     async fn call_api_inner_with_request_id(
@@ -434,24 +442,27 @@ impl TushareClient {
             &request_id,
             &request.api_name.name(),
             request.params.len(),
-            request.fields.len()
+            request.fields.len(),
         );
-        
+
         // Log detailed request information (if enabled)
         let token_preview_string = if self.logger.config().log_sensitive_data {
-            Some(format!("token: {}***", &self.token[..self.token.len().min(8)]))
+            Some(format!(
+                "token: {}***",
+                &self.token[..self.token.len().min(8)]
+            ))
         } else {
             None
         };
-        
+
         self.logger.log_request_details(
             &request_id,
             &request.api_name.name(),
             &format!("{:?}", request.params),
             &format!("{:?}", request.fields),
-            token_preview_string.as_deref()
+            token_preview_string.as_deref(),
         );
-        
+
         let internal_request = InternalTushareRequest {
             api_name: ApiNameRef(&request.api_name),
             token: &self.token,
@@ -460,55 +471,75 @@ impl TushareClient {
         };
 
         self.logger.log_http_request(&request_id);
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post("http://api.tushare.pro")
             .json(&internal_request)
             .send()
             .await
             .map_err(|e| {
                 let elapsed = start_time.elapsed();
-                self.logger.log_http_error(&request_id, elapsed, &e.to_string());
+                self.logger
+                    .log_http_error(&request_id, elapsed, &e.to_string());
                 e
             })?;
 
         let status = response.status();
         self.logger.log_http_response(&request_id, status.as_u16());
-        
-        let response_text = response.text().await
-            .map_err(|e| {
-                let elapsed = start_time.elapsed();
-                self.logger.log_response_read_error(&request_id, elapsed, &e.to_string());
-                e
-            })?;
+
+        let response_text = response.text().await.map_err(|e| {
+            let elapsed = start_time.elapsed();
+            self.logger
+                .log_response_read_error(&request_id, elapsed, &e.to_string());
+            e
+        })?;
         self.logger.log_raw_response(&request_id, &response_text);
-        
-        let tushare_response: TushareResponse = serde_json::from_str(&response_text)
-            .map_err(|e| {
+
+        let tushare_response: TushareResponse =
+            serde_json::from_str(&response_text).map_err(|e| {
                 let elapsed = start_time.elapsed();
-                self.logger.log_json_parse_error(&request_id, elapsed, &e.to_string(), &response_text);
+                self.logger.log_json_parse_error(
+                    &request_id,
+                    elapsed,
+                    &e.to_string(),
+                    &response_text,
+                );
                 e
             })?;
 
         let elapsed = start_time.elapsed();
-        
+
         if tushare_response.code != 0 {
-            let message = format!("error code: {}, error msg: {}", tushare_response.code, tushare_response.msg.clone().unwrap_or_default());
-            self.logger.log_api_error(&request_id, elapsed, tushare_response.code, &message);
+            let message = format!(
+                "error code: {}, error msg: {}",
+                tushare_response.code,
+                tushare_response.msg.clone().unwrap_or_default()
+            );
+            self.logger
+                .log_api_error(&request_id, elapsed, tushare_response.code, &message);
             return Err(TushareError::ApiError {
                 code: tushare_response.code,
-                message
+                message,
             });
         }
 
         // Log success information and performance metrics
-        self.logger.log_api_success(&request_id, elapsed, tushare_response.data.clone().map(|data| data.items.len()).unwrap_or(0));
-        
+        self.logger.log_api_success(
+            &request_id,
+            elapsed,
+            tushare_response
+                .data
+                .clone()
+                .map(|data| data.items.len())
+                .unwrap_or(0),
+        );
+
         // Log response details (if enabled)
         self.logger.log_response_details(
             &request_id,
             &tushare_response.request_id,
-            &format!("{:?}", tushare_response.data.as_ref().map(|d| &d.fields))
+            &format!("{:?}", tushare_response.data.as_ref().map(|d| &d.fields)),
         );
 
         Ok(tushare_response)
@@ -549,9 +580,9 @@ impl TushareClient {
         let response = self.call_api(&request).await?;
         TushareEntityList::try_from(response).map_err(Into::into)
     }
- }
+}
 
- /// Generate a unique request ID for logging purposes
+/// Generate a unique request ID for logging purposes
 pub(crate) fn generate_request_id() -> String {
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -560,14 +591,18 @@ pub(crate) fn generate_request_id() -> String {
     format!("req_{}", timestamp)
 }
 
- mod tests {
-    use crate::{fields, params, Api, TushareClient, TushareRequest};
+mod tests {
+    use crate::{Api, TushareClient, TushareRequest, fields, params};
 
     #[tokio::test]
     async fn test() {
-        unsafe { std::env::set_var("TUSHARE_TOKEN", "xxxx"); }
+        unsafe {
+            std::env::set_var("TUSHARE_TOKEN", "xxxx");
+        }
         let client = TushareClient::from_env().unwrap();
-        let response = client.call_api(&r#"
+        let response = client
+            .call_api(
+                &r#"
                    {
                         "api_name": "stock_basic",
                         "params": { "list_stauts": "L"},
@@ -580,8 +615,9 @@ pub(crate) fn generate_request_id() -> String {
                                 "exchange",
                                 "market"]
                     }
-            "#
-        ).await;
+            "#,
+            )
+            .await;
         println!("resposne = {:?}", response);
         // let parmas = params!(
         //     "list_status" => "L",

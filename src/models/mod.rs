@@ -11,28 +11,28 @@
 //! - **Field names match API** — Rust field names mirror Tushare field names;
 //!   `#[tushare(field = "...")]` is used only when Rust syntax demands it
 
-pub mod stock;
-pub mod fund;
-pub mod index;
 pub mod bond;
 pub mod etf;
+pub mod forex;
+pub mod fund;
 pub mod futures;
 pub mod hk;
-pub mod us;
-pub mod options;
-pub mod macro_data;
+pub mod index;
 pub mod industry;
-pub mod forex;
+pub mod macro_data;
+pub mod options;
+pub mod stock;
+pub mod us;
 
-pub use stock::*;
-pub use fund::*;
-pub use index::*;
 pub use bond::*;
 pub use etf::*;
+pub use forex::*;
+pub use fund::*;
 pub use futures::*;
 pub use hk::*;
-pub use us::*;
-pub use options::*;
-pub use macro_data::*;
+pub use index::*;
 pub use industry::*;
-pub use forex::*;
+pub use macro_data::*;
+pub use options::*;
+pub use stock::*;
+pub use us::*;

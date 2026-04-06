@@ -1,10 +1,10 @@
-use tushare_api::{TushareClient, TushareRequest, Api, TushareResult, params, fields};
 use std::time::Duration;
+use tushare_api::{Api, TushareClient, TushareRequest, TushareResult, fields, params};
 
 #[tokio::main]
 async fn main() -> TushareResult<()> {
     println!("=== 使用环境变量 TUSHARE_TOKEN 创建客户端 ===");
-    
+
     // 从环境变量创建客户端（使用默认超时设置）
     let client = match TushareClient::from_env() {
         Ok(client) => {
@@ -18,14 +18,14 @@ async fn main() -> TushareResult<()> {
             return Err(e);
         }
     };
-    
+
     // 使用宏构建请求（支持直接使用字符串字面量）
     let request = TushareRequest {
         api_name: Api::StockBasic,
         params: params!("list_status" => "L"),
         fields: fields!["ts_code", "name", "industry", "area"],
     };
-    
+
     // 调用 API
     match client.call_api(&request).await {
         Ok(response) => {
@@ -43,23 +43,23 @@ async fn main() -> TushareResult<()> {
             eprintln!("❌ 获取股票列表失败: {}", e);
         }
     }
-    
+
     println!("\n=== 使用环境变量和自定义超时设置 ===");
-    
+
     // 从环境变量创建客户端（自定义超时设置）
     let client_with_timeout = TushareClient::from_env_with_timeout(
         Duration::from_secs(5),  // 连接超时 5 秒
-        Duration::from_secs(60)  // 请求超时 60 秒
+        Duration::from_secs(60), // 请求超时 60 秒
     )?;
-    
+
     println!("\n=== 演示自定义 API 调用 ===\n");
-    
+
     let custom_request = TushareRequest {
         api_name: Api::Custom("daily".to_string()),
         params: params!("ts_code" => "000001.SZ"),
         fields: fields!["ts_code", "trade_date", "close"],
     };
-    
+
     match client_with_timeout.call_api(&custom_request).await {
         Ok(response) => {
             if let Some(data) = response.data {

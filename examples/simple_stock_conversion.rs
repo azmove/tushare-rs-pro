@@ -1,5 +1,5 @@
-use tushare_api::{TushareClient, Api, request, TushareEntityList, TushareRequest, params, fields};
 use tushare_api::DeriveFromTushareData;
+use tushare_api::{Api, TushareClient, TushareEntityList, TushareRequest, fields, params, request};
 
 #[derive(Debug, Clone, DeriveFromTushareData)]
 struct Stock {
@@ -23,12 +23,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Method 1: Use the generic call_api_as method with TushareEntityList
     println!("=== Method 1: Using call_api_as with TushareEntityList ===");
     let stock_list: TushareEntityList<Stock> = client.call_api_as(request.clone()).await?;
-    
+
     println!("Found {} stocks:", stock_list.len());
     for (i, stock) in stock_list.iter().take(5).enumerate() {
-        println!("{}. {} ({}) - {}", i + 1, stock.ts_code, stock.symbol, stock.name);
+        println!(
+            "{}. {} ({}) - {}",
+            i + 1,
+            stock.ts_code,
+            stock.symbol,
+            stock.name
+        );
     }
-    
+
     // Show pagination info
     println!("Total records: {}", stock_list.count());
     println!("Has more pages: {}", stock_list.has_more());
@@ -37,10 +43,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Method 2: Using call_api + manual conversion ===");
     let response = client.call_api(&request).await?;
     let stocks: Vec<Stock> = tushare_api::utils::response_to_vec(response)?;
-    
+
     println!("Found {} stocks:", stocks.len());
     for (i, stock) in stocks.iter().take(5).enumerate() {
-        println!("{}. {} ({}) - {}", i + 1, stock.ts_code, stock.symbol, stock.name);
+        println!(
+            "{}. {} ({}) - {}",
+            i + 1,
+            stock.ts_code,
+            stock.symbol,
+            stock.name
+        );
     }
 
     Ok(())

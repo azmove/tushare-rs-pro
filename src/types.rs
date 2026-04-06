@@ -1,7 +1,7 @@
+use crate::TushareError;
 use crate::api::{Api, serialize_api_name};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::TushareError;
 use std::convert::Infallible;
 
 /// Tushare API request structure

@@ -1,6 +1,6 @@
-use std::fmt;
-use std::error::Error as StdError;
 use std::convert::Infallible;
+use std::error::Error as StdError;
+use std::fmt;
 
 /// Tushare API error types
 #[derive(Debug)]
@@ -8,10 +8,7 @@ pub enum TushareError {
     /// HTTP request error
     HttpError(reqwest::Error),
     /// API response error (contains error code and error message)
-    ApiError {
-        code: i32,
-        message: String,
-    },
+    ApiError { code: i32, message: String },
     /// JSON serialization/deserialization error
     SerializationError(serde_json::Error),
     /// Network timeout error

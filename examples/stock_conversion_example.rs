@@ -1,5 +1,5 @@
-use tushare_api::{TushareClient, Api, request, TushareEntityList, TushareRequest, params, fields};
 use tushare_api::DeriveFromTushareData;
+use tushare_api::{Api, TushareClient, TushareEntityList, TushareRequest, fields, params, request};
 
 #[derive(Debug, Clone, DeriveFromTushareData)]
 struct Stock {
@@ -26,13 +26,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Display the results
     println!("Found {} stocks:", stock_list.len());
     for (i, stock) in stock_list.iter().take(10).enumerate() {
-        println!("{}. {} ({}) - {}", i + 1, stock.ts_code, stock.symbol, stock.name);
+        println!(
+            "{}. {} ({}) - {}",
+            i + 1,
+            stock.ts_code,
+            stock.symbol,
+            stock.name
+        );
     }
 
     if stock_list.len() > 10 {
         println!("... and {} more stocks", stock_list.len() - 10);
     }
-    
+
     // Show pagination info
     println!("Total records: {}", stock_list.count());
     println!("Has more pages: {}", stock_list.has_more());

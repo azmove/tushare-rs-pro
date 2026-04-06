@@ -58,33 +58,33 @@
 // Allow the derive macro's generated `tushare_api::` paths to resolve within this crate
 extern crate self as tushare_api;
 
-pub mod error;
 pub mod api;
-pub mod types;
+pub mod basic_types;
 pub mod client;
 pub mod client_ex;
-pub mod logging;
-pub mod traits;
-pub mod utils;
-pub mod basic_types;
-pub mod third_party_types;
 pub mod custom_date_format;
+pub mod error;
+pub mod logging;
 pub mod models;
+pub mod third_party_types;
+pub mod traits;
+pub mod types;
+pub mod utils;
 
 // Re-export main types for convenience
-pub use error::{TushareError, TushareResult};
 pub use api::Api;
-pub use types::{TushareRequest, TushareResponse, TushareData, TushareEntityList};
-pub use client::{TushareClient, HttpClientConfig};
+pub use client::{HttpClientConfig, TushareClient};
 pub use client_ex::TushareClientEx;
+pub use error::{TushareError, TushareResult};
 pub use logging::{LogConfig, LogLevel, Logger};
-pub use traits::{FromTushareData, FromTushareValue, FromOptionalTushareValue};
+pub use traits::{FromOptionalTushareValue, FromTushareData, FromTushareValue};
+pub use types::{TushareData, TushareEntityList, TushareRequest, TushareResponse};
 pub use utils::response_to_vec;
 
 // Macros are automatically exported at the crate root via #[macro_export]
 
 // Re-export procedural macros from tushare-derive
-pub use tushare_derive::{FromTushareData as DeriveFromTushareData};
+pub use tushare_derive::FromTushareData as DeriveFromTushareData;
 
 // Re-export serde_json for user convenience
 pub use serde_json;
@@ -106,9 +106,9 @@ mod tests {
         let request = TushareRequest::new(
             Api::StockBasic,
             vec![("list_status".to_string(), "L".to_string())],
-            vec!["ts_code".to_string(), "symbol".to_string()]
+            vec!["ts_code".to_string(), "symbol".to_string()],
         );
-        
+
         assert_eq!(request.api_name, Api::StockBasic);
         assert_eq!(request.params.len(), 1);
         assert_eq!(request.fields.len(), 2);
@@ -130,9 +130,23 @@ mod tests {
                 count: 2,
             }),
         };
-        
+
         assert_eq!(response.code, 0);
-        assert_eq!(response.data.as_ref().map(|data| data.items.len()).unwrap_or(0), 2);
-        assert_eq!(response.data.as_ref().map(|data| data.items.len()).unwrap_or(0), 2);
+        assert_eq!(
+            response
+                .data
+                .as_ref()
+                .map(|data| data.items.len())
+                .unwrap_or(0),
+            2
+        );
+        assert_eq!(
+            response
+                .data
+                .as_ref()
+                .map(|data| data.items.len())
+                .unwrap_or(0),
+            2
+        );
     }
 }

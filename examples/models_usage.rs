@@ -3,9 +3,7 @@
 //! 运行: TUSHARE_TOKEN=your_token cargo run --example models_usage
 
 use tushare_api::{
-    Api, TushareClient, TushareEntityList, TushareRequest,
-    fields, params, request,
-    models::*,
+    Api, TushareClient, TushareEntityList, TushareRequest, fields, models::*, params, request,
 };
 
 #[tokio::main]

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use serde::de;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// Tushare API enum types
@@ -9,7 +9,7 @@ pub enum Api {
     FundBasic,
     FundDaily,
     FundPortfolio,
-    Daily,      
+    Daily,
     DailyBasic,
     MoneyflowMktDc,
     Weekly,
@@ -22,7 +22,7 @@ pub enum Api {
     StockCompany,
     MarginDetail,
     StkHoldernumber,
-    ThsIndex, 
+    ThsIndex,
     ThsMember,
     ThsDaily,
     ThsHot,

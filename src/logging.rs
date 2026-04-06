@@ -1,7 +1,10 @@
-use log::{info, debug, error, trace, warn};
+use log::{debug, error, info, trace, warn};
 
 #[cfg(feature = "tracing")]
-use tracing::{info as tracing_info, debug as tracing_debug, error as tracing_error, trace as tracing_trace, warn as tracing_warn};
+use tracing::{
+    debug as tracing_debug, error as tracing_error, info as tracing_info, trace as tracing_trace,
+    warn as tracing_warn,
+};
 
 /// Log level configuration
 #[derive(Debug, Clone, PartialEq)]
@@ -111,7 +114,7 @@ impl Logger {
             LogLevel::Trace => tracing_trace!("{}", full_message),
             LogLevel::Off => {}
         }
-        
+
         #[cfg(not(feature = "tracing"))]
         match level {
             LogLevel::Error => error!("{}", full_message),
@@ -124,21 +127,36 @@ impl Logger {
     }
 
     /// Log API call start
-    pub fn log_api_start(&self, request_id: &str, api_name: &str, params_count: usize, fields_count: usize) {
+    pub fn log_api_start(
+        &self,
+        request_id: &str,
+        api_name: &str,
+        params_count: usize,
+        fields_count: usize,
+    ) {
         let request_id = request_id.to_string();
         let api_name = api_name.to_string();
         self.log_safe(
             LogLevel::Info,
-            move || format!(
-                "[{}] Starting Tushare API call: {}, params count: {}, fields count: {}",
-                request_id, api_name, params_count, fields_count
-            ),
+            move || {
+                format!(
+                    "[{}] Starting Tushare API call: {}, params count: {}, fields count: {}",
+                    request_id, api_name, params_count, fields_count
+                )
+            },
             None,
         );
     }
 
     /// Log request details
-    pub fn log_request_details(&self, request_id: &str, api_name: &str, params: &str, fields: &str, token_preview: Option<&str>) {
+    pub fn log_request_details(
+        &self,
+        request_id: &str,
+        api_name: &str,
+        params: &str,
+        fields: &str,
+        token_preview: Option<&str>,
+    ) {
         if !self.config.log_requests {
             return;
         }
@@ -149,10 +167,12 @@ impl Logger {
         let fields = fields.to_string();
         self.log_safe(
             LogLevel::Debug,
-            move || format!(
-                "[{}] API request details - API: {}, params: {}, fields: {}",
-                request_id, api_name, params, fields
-            ),
+            move || {
+                format!(
+                    "[{}] API request details - API: {}, params: {}, fields: {}",
+                    request_id, api_name, params, fields
+                )
+            },
             token_preview,
         );
     }
@@ -173,10 +193,12 @@ impl Logger {
         let error = error.to_string();
         self.log_safe(
             LogLevel::Error,
-            move || format!(
-                "[{}] HTTP request failed, duration: {:?}, error: {}",
-                request_id, elapsed, error
-            ),
+            move || {
+                format!(
+                    "[{}] HTTP request failed, duration: {:?}, error: {}",
+                    request_id, elapsed, error
+                )
+            },
             None,
         );
     }
@@ -186,21 +208,33 @@ impl Logger {
         let request_id = request_id.to_string();
         self.log_safe(
             LogLevel::Debug,
-            move || format!("[{}] Received HTTP response, status code: {}", request_id, status_code),
+            move || {
+                format!(
+                    "[{}] Received HTTP response, status code: {}",
+                    request_id, status_code
+                )
+            },
             None,
         );
     }
 
     /// Log response reading failure
-    pub fn log_response_read_error(&self, request_id: &str, elapsed: std::time::Duration, error: &str) {
+    pub fn log_response_read_error(
+        &self,
+        request_id: &str,
+        elapsed: std::time::Duration,
+        error: &str,
+    ) {
         let request_id = request_id.to_string();
         let error = error.to_string();
         self.log_safe(
             LogLevel::Error,
-            move || format!(
-                "[{}] Failed to read response content, duration: {:?}, error: {}",
-                request_id, elapsed, error
-            ),
+            move || {
+                format!(
+                    "[{}] Failed to read response content, duration: {:?}, error: {}",
+                    request_id, elapsed, error
+                )
+            },
             None,
         );
     }
@@ -215,13 +249,26 @@ impl Logger {
         let response_text = response_text.to_string();
         self.log_safe(
             LogLevel::Trace,
-            move || format!("[{}] Raw response content length = {}, body = {}", request_id, response_text.len(), response_text),
+            move || {
+                format!(
+                    "[{}] Raw response content length = {}, body = {}",
+                    request_id,
+                    response_text.len(),
+                    response_text
+                )
+            },
             None,
         );
     }
 
     /// Log JSON parsing failure
-    pub fn log_json_parse_error(&self, request_id: &str, elapsed: std::time::Duration, error: &str, response_text: &str) {
+    pub fn log_json_parse_error(
+        &self,
+        request_id: &str,
+        elapsed: std::time::Duration,
+        error: &str,
+        response_text: &str,
+    ) {
         let request_id = request_id.to_string();
         let error = error.to_string();
         let response_preview = if self.config.log_responses_err {
@@ -241,29 +288,44 @@ impl Logger {
     }
 
     /// Log API error
-    pub fn log_api_error(&self, request_id: &str, elapsed: std::time::Duration, code: i32, message: &str) {
+    pub fn log_api_error(
+        &self,
+        request_id: &str,
+        elapsed: std::time::Duration,
+        code: i32,
+        message: &str,
+    ) {
         let request_id = request_id.to_string();
         let message = message.to_string();
         self.log_safe(
             LogLevel::Error,
-            move || format!(
-                "[{}] API returned error, duration: {:?}, error code: {}, error message: {}",
-                request_id, elapsed, code, message
-            ),
+            move || {
+                format!(
+                    "[{}] API returned error, duration: {:?}, error code: {}, error message: {}",
+                    request_id, elapsed, code, message
+                )
+            },
             None,
         );
     }
 
     /// Log API call success
-    pub fn log_api_success(&self, request_id: &str, elapsed: std::time::Duration, data_count: usize) {
+    pub fn log_api_success(
+        &self,
+        request_id: &str,
+        elapsed: std::time::Duration,
+        data_count: usize,
+    ) {
         let request_id = request_id.to_string();
         if self.config.log_performance {
             self.log_safe(
                 LogLevel::Info,
-                move || format!(
-                    "[{}] API call successful, duration: {:?}, data rows returned: {}",
-                    request_id, elapsed, data_count
-                ),
+                move || {
+                    format!(
+                        "[{}] API call successful, duration: {:?}, data rows returned: {}",
+                        request_id, elapsed, data_count
+                    )
+                },
                 None,
             );
         } else {
@@ -286,10 +348,12 @@ impl Logger {
         let fields = fields.to_string();
         self.log_safe(
             LogLevel::Debug,
-            move || format!(
-                "[{}] Response details - Request ID: {}, fields: {}",
-                request_id, response_request_id, fields
-            ),
+            move || {
+                format!(
+                    "[{}] Response details - Request ID: {}, fields: {}",
+                    request_id, response_request_id, fields
+                )
+            },
             None,
         );
     }

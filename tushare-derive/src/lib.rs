@@ -1,23 +1,23 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Data, Fields, Type};
+use syn::{Data, DeriveInput, Fields, Type, parse_macro_input};
 
 /// Derive macro for automatically implementing FromTushareData trait
-/// 
+///
 /// This macro generates the implementation of FromTushareData trait for structs,
 /// enabling automatic conversion from Tushare API response data to Rust structs.
-/// 
+///
 /// # Attributes
-/// 
+///
 /// - `#[tushare(field = "api_field_name")]` - Maps struct field to a different API field name
 /// - `#[tushare(skip)]` - Skips this field during conversion (field must have Default implementation)
 /// - `#[tushare(date_format = "format_string")]` - Specifies custom date format for chrono date/time types
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use tushare_derive::FromTushareData;
-/// 
+///
 /// #[derive(FromTushareData)]
 /// struct Stock {
 ///     ts_code: String,
@@ -35,7 +35,7 @@ use syn::{parse_macro_input, DeriveInput, Data, Fields, Type};
 #[proc_macro_derive(FromTushareData, attributes(tushare))]
 pub fn derive_from_tushare_data(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    
+
     let name = &input.ident;
     let fields = match &input.data {
         Data::Struct(data) => match &data.fields {
@@ -48,17 +48,17 @@ pub fn derive_from_tushare_data(input: TokenStream) -> TokenStream {
     let field_assignments = fields.iter().map(|field| {
         let field_name = &field.ident;
         let field_type = &field.ty;
-        
+
         // Check for tushare attributes
         let mut api_field_name = field_name.as_ref().unwrap().to_string();
         let mut skip_field = false;
         let mut date_format: Option<String> = None;
-        
+
         for attr in &field.attrs {
             if attr.path().is_ident("tushare") {
                 if let Ok(meta_list) = attr.meta.require_list() {
                     let tokens_str = meta_list.tokens.to_string();
-                    
+
                     // Parse field = "value" pattern
                     if let Some(field_start) = tokens_str.find("field") {
                         let after_field = &tokens_str[field_start + 5..]; // Skip "field"
@@ -72,12 +72,12 @@ pub fn derive_from_tushare_data(input: TokenStream) -> TokenStream {
                             }
                         }
                     }
-                    
+
                     // Check for skip attribute
                     if tokens_str.contains("skip") {
                         skip_field = true;
                     }
-                    
+
                     // Parse date_format = "value" pattern
                     if let Some(format_start) = tokens_str.find("date_format") {
                         let after_format = &tokens_str[format_start + 11..]; // Skip "date_format"
@@ -94,7 +94,7 @@ pub fn derive_from_tushare_data(input: TokenStream) -> TokenStream {
                 }
             }
         }
-        
+
         if skip_field {
             quote! {
                 #field_name: Default::default(),
@@ -103,7 +103,7 @@ pub fn derive_from_tushare_data(input: TokenStream) -> TokenStream {
             // Generate field assignment using unified trait approach
             if is_option_type(field_type) {
                 let inner_type = extract_option_inner_type(field_type);
-                
+
                 if let Some(format) = date_format {
                     // Use custom date format for optional types
                     quote! {
@@ -164,8 +164,6 @@ pub fn derive_from_tushare_data(input: TokenStream) -> TokenStream {
 
     TokenStream::from(expanded)
 }
-
-
 
 // Helper functions for type checking
 fn is_option_type(ty: &Type) -> bool {

@@ -1,6 +1,6 @@
-use tushare_api::{TushareClient, LogLevel, LogConfig, Api, TushareRequest};
-use std::time::Duration;
 use std::collections::HashMap;
+use std::time::Duration;
+use tushare_api::{Api, LogConfig, LogLevel, TushareClient, TushareRequest};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         log_sensitive_data: false,
         log_performance: true,
     };
-    
+
     let client4 = TushareClient::builder()
         .with_token("your_token_here")
         .with_log_config(log_config)
@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 演示 API 调用（需要有效的 token）
     if std::env::var("TUSHARE_TOKEN").is_ok() {
         println!("\n=== 实际 API 调用演示 ===");
-        
+
         let client = TushareClient::builder()
             .with_token(&std::env::var("TUSHARE_TOKEN")?)
             .with_log_level(LogLevel::Info)
@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut params = HashMap::new();
         params.insert("list_status".to_string(), "L".to_string());
-        
+
         let req = TushareRequest {
             api_name: Api::StockBasic,
             params,

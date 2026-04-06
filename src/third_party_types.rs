@@ -4,14 +4,29 @@
 //! when their corresponding feature flags are enabled.
 
 // Conditional imports based on enabled features
-#[cfg(any(feature = "rust_decimal", feature = "bigdecimal", feature = "chrono", feature = "uuid"))]
+#[cfg(any(
+    feature = "rust_decimal",
+    feature = "bigdecimal",
+    feature = "chrono",
+    feature = "uuid"
+))]
 use serde_json::Value;
 
-#[cfg(any(feature = "rust_decimal", feature = "bigdecimal", feature = "chrono", feature = "uuid"))]
+#[cfg(any(
+    feature = "rust_decimal",
+    feature = "bigdecimal",
+    feature = "chrono",
+    feature = "uuid"
+))]
 use crate::error::TushareError;
 
-#[cfg(any(feature = "rust_decimal", feature = "bigdecimal", feature = "chrono", feature = "uuid"))]
-use crate::traits::{FromTushareValue, FromOptionalTushareValue};
+#[cfg(any(
+    feature = "rust_decimal",
+    feature = "bigdecimal",
+    feature = "chrono",
+    feature = "uuid"
+))]
+use crate::traits::{FromOptionalTushareValue, FromTushareValue};
 
 // =============================================================================
 // rust_decimal::Decimal support
@@ -25,27 +40,33 @@ mod rust_decimal_support {
     impl FromTushareValue for Decimal {
         fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
             match value {
-                Value::String(s) => {
-                    s.parse().map_err(|e| {
-                        TushareError::ParseError(format!("Failed to parse decimal from string '{}': {}", s, e))
-                    })
-                },
+                Value::String(s) => s.parse().map_err(|e| {
+                    TushareError::ParseError(format!(
+                        "Failed to parse decimal from string '{}': {}",
+                        s, e
+                    ))
+                }),
                 Value::Number(n) => {
                     if let Some(f) = n.as_f64() {
                         Decimal::try_from(f).map_err(|e| {
-                            TushareError::ParseError(format!("Failed to convert number {} to decimal: {}", f, e))
+                            TushareError::ParseError(format!(
+                                "Failed to convert number {} to decimal: {}",
+                                f, e
+                            ))
                         })
                     } else {
                         Err(TushareError::ParseError(format!(
-                            "Cannot convert number {:?} to decimal", n
+                            "Cannot convert number {:?} to decimal",
+                            n
                         )))
                     }
-                },
+                }
                 Value::Null => Err(TushareError::ParseError(
-                    "Cannot convert null to decimal".to_string()
+                    "Cannot convert null to decimal".to_string(),
                 )),
                 _ => Err(TushareError::ParseError(format!(
-                    "Cannot convert {:?} to decimal", value
+                    "Cannot convert {:?} to decimal",
+                    value
                 ))),
             }
         }
@@ -58,7 +79,7 @@ mod rust_decimal_support {
             } else {
                 match value {
                     Value::String(s) if s.is_empty() => Ok(None),
-                    _ => Decimal::from_tushare_value(value).map(Some)
+                    _ => Decimal::from_tushare_value(value).map(Some),
                 }
             }
         }
@@ -78,27 +99,33 @@ mod bigdecimal_support {
     impl FromTushareValue for BigDecimal {
         fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
             match value {
-                Value::String(s) => {
-                    BigDecimal::from_str(s).map_err(|e| {
-                        TushareError::ParseError(format!("Failed to parse BigDecimal from string '{}': {}", s, e))
-                    })
-                },
+                Value::String(s) => BigDecimal::from_str(s).map_err(|e| {
+                    TushareError::ParseError(format!(
+                        "Failed to parse BigDecimal from string '{}': {}",
+                        s, e
+                    ))
+                }),
                 Value::Number(n) => {
                     if let Some(f) = n.as_f64() {
                         BigDecimal::try_from(f).map_err(|e| {
-                            TushareError::ParseError(format!("Failed to convert number {} to BigDecimal: {}", f, e))
+                            TushareError::ParseError(format!(
+                                "Failed to convert number {} to BigDecimal: {}",
+                                f, e
+                            ))
                         })
                     } else {
                         Err(TushareError::ParseError(format!(
-                            "Cannot convert number {:?} to BigDecimal", n
+                            "Cannot convert number {:?} to BigDecimal",
+                            n
                         )))
                     }
-                },
+                }
                 Value::Null => Err(TushareError::ParseError(
-                    "Cannot convert null to BigDecimal".to_string()
+                    "Cannot convert null to BigDecimal".to_string(),
                 )),
                 _ => Err(TushareError::ParseError(format!(
-                    "Cannot convert {:?} to BigDecimal", value
+                    "Cannot convert {:?} to BigDecimal",
+                    value
                 ))),
             }
         }
@@ -111,7 +138,7 @@ mod bigdecimal_support {
             } else {
                 match value {
                     Value::String(s) if s.is_empty() => Ok(None),
-                    _ => BigDecimal::from_tushare_value(value).map(Some)
+                    _ => BigDecimal::from_tushare_value(value).map(Some),
                 }
             }
         }
@@ -133,19 +160,19 @@ mod chrono_support {
                 Value::String(s) => {
                     // Try common date formats in order of likelihood
                     let formats = [
-                        "%Y%m%d",           // 20240315
-                        "%Y-%m-%d",         // 2024-03-15
-                        "%Y/%m/%d",         // 2024/03/15
-                        "%d/%m/%Y",         // 15/03/2024
-                        "%m/%d/%Y",         // 03/15/2024
-                        "%d-%m-%Y",         // 15-03-2024
-                        "%m-%d-%Y",         // 03-15-2024
-                        "%d.%m.%Y",         // 15.03.2024
-                        "%Y.%m.%d",         // 2024.03.15
+                        "%Y%m%d",            // 20240315
+                        "%Y-%m-%d",          // 2024-03-15
+                        "%Y/%m/%d",          // 2024/03/15
+                        "%d/%m/%Y",          // 15/03/2024
+                        "%m/%d/%Y",          // 03/15/2024
+                        "%d-%m-%Y",          // 15-03-2024
+                        "%m-%d-%Y",          // 03-15-2024
+                        "%d.%m.%Y",          // 15.03.2024
+                        "%Y.%m.%d",          // 2024.03.15
                         "%Y年%m月%d日",      // 2024年03月15日
                         "%Y-%m-%d %H:%M:%S", // 2024-03-15 00:00:00 (extract date part)
                     ];
-                    
+
                     for format in &formats {
                         if let Ok(date) = NaiveDate::parse_from_str(s, format) {
                             return Ok(date);
@@ -157,32 +184,39 @@ mod chrono_support {
                             }
                         }
                     }
-                    
+
                     Err(TushareError::ParseError(format!(
-                        "Failed to parse date from string '{}'. Supported formats: YYYYMMDD, YYYY-MM-DD, YYYY/MM/DD, DD/MM/YYYY, MM/DD/YYYY, DD-MM-YYYY, MM-DD-YYYY, DD.MM.YYYY, YYYY.MM.DD, YYYY年MM月DD日", s
+                        "Failed to parse date from string '{}'. Supported formats: YYYYMMDD, YYYY-MM-DD, YYYY/MM/DD, DD/MM/YYYY, MM/DD/YYYY, DD-MM-YYYY, MM-DD-YYYY, DD.MM.YYYY, YYYY.MM.DD, YYYY年MM月DD日",
+                        s
                     )))
-                },
+                }
                 Value::Number(n) => {
                     if let Some(i) = n.as_i64() {
                         // Assume it's YYYYMMDD format
                         let date_str = i.to_string();
                         if date_str.len() == 8 {
                             NaiveDate::parse_from_str(&date_str, "%Y%m%d").map_err(|e| {
-                                TushareError::ParseError(format!("Failed to parse date from number {}: {}", i, e))
+                                TushareError::ParseError(format!(
+                                    "Failed to parse date from number {}: {}",
+                                    i, e
+                                ))
                             })
                         } else {
                             Err(TushareError::ParseError(format!(
-                                "Invalid date number format: {}. Expected YYYYMMDD", i
+                                "Invalid date number format: {}. Expected YYYYMMDD",
+                                i
                             )))
                         }
                     } else {
                         Err(TushareError::ParseError(format!(
-                            "Cannot convert number {:?} to date", n
+                            "Cannot convert number {:?} to date",
+                            n
                         )))
                     }
-                },
+                }
                 _ => Err(TushareError::ParseError(format!(
-                    "Cannot convert {:?} to date", value
+                    "Cannot convert {:?} to date",
+                    value
                 ))),
             }
         }
@@ -195,7 +229,7 @@ mod chrono_support {
             } else {
                 match value {
                     Value::String(s) if s.is_empty() => Ok(None),
-                    _ => NaiveDate::from_tushare_value(value).map(Some)
+                    _ => NaiveDate::from_tushare_value(value).map(Some),
                 }
             }
         }
@@ -216,12 +250,14 @@ mod chrono_support {
                         Ok(dt)
                     } else {
                         Err(TushareError::ParseError(format!(
-                            "Failed to parse datetime from string '{}'. Expected formats: YYYYMMDD HH:MM:SS, YYYY-MM-DD HH:MM:SS, YYYY/MM/DD HH:MM:SS, or YYYY-MM-DDTHH:MM:SS", s
+                            "Failed to parse datetime from string '{}'. Expected formats: YYYYMMDD HH:MM:SS, YYYY-MM-DD HH:MM:SS, YYYY/MM/DD HH:MM:SS, or YYYY-MM-DDTHH:MM:SS",
+                            s
                         )))
                     }
-                },
+                }
                 _ => Err(TushareError::ParseError(format!(
-                    "Cannot convert {:?} to datetime", value
+                    "Cannot convert {:?} to datetime",
+                    value
                 ))),
             }
         }
@@ -234,7 +270,7 @@ mod chrono_support {
             } else {
                 match value {
                     Value::String(s) if s.is_empty() => Ok(None),
-                    _ => NaiveDateTime::from_tushare_value(value).map(Some)
+                    _ => NaiveDateTime::from_tushare_value(value).map(Some),
                 }
             }
         }
@@ -251,12 +287,14 @@ mod chrono_support {
                         Ok(DateTime::from_naive_utc_and_offset(naive_dt, Utc))
                     } else {
                         Err(TushareError::ParseError(format!(
-                            "Failed to parse UTC datetime from string '{}'", s
+                            "Failed to parse UTC datetime from string '{}'",
+                            s
                         )))
                     }
-                },
+                }
                 _ => Err(TushareError::ParseError(format!(
-                    "Cannot convert {:?} to UTC datetime", value
+                    "Cannot convert {:?} to UTC datetime",
+                    value
                 ))),
             }
         }
@@ -269,7 +307,7 @@ mod chrono_support {
             } else {
                 match value {
                     Value::String(s) if s.is_empty() => Ok(None),
-                    _ => DateTime::<Utc>::from_tushare_value(value).map(Some)
+                    _ => DateTime::<Utc>::from_tushare_value(value).map(Some),
                 }
             }
         }
@@ -288,13 +326,15 @@ mod uuid_support {
     impl FromTushareValue for Uuid {
         fn from_tushare_value(value: &Value) -> Result<Self, TushareError> {
             match value {
-                Value::String(s) => {
-                    Uuid::parse_str(s).map_err(|e| {
-                        TushareError::ParseError(format!("Failed to parse UUID from string '{}': {}", s, e))
-                    })
-                },
+                Value::String(s) => Uuid::parse_str(s).map_err(|e| {
+                    TushareError::ParseError(format!(
+                        "Failed to parse UUID from string '{}': {}",
+                        s, e
+                    ))
+                }),
                 _ => Err(TushareError::ParseError(format!(
-                    "Cannot convert {:?} to UUID", value
+                    "Cannot convert {:?} to UUID",
+                    value
                 ))),
             }
         }
@@ -307,7 +347,7 @@ mod uuid_support {
             } else {
                 match value {
                     Value::String(s) if s.is_empty() => Ok(None),
-                    _ => Uuid::from_tushare_value(value).map(Some)
+                    _ => Uuid::from_tushare_value(value).map(Some),
                 }
             }
         }

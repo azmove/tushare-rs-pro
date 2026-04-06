@@ -1,12 +1,14 @@
 //! Utility functions for working with Tushare API responses
 
 use crate::error::TushareError;
-use crate::types::TushareResponse;
 use crate::traits::FromTushareData;
+use crate::types::TushareResponse;
 use serde_json::Value;
 
 /// Convert TushareResponse to `Vec<T>` where T implements FromTushareData
-pub fn response_to_vec<T: FromTushareData>(response: TushareResponse) -> Result<Vec<T>, TushareError> {
+pub fn response_to_vec<T: FromTushareData>(
+    response: TushareResponse,
+) -> Result<Vec<T>, TushareError> {
     let mut results = Vec::new();
     if response.data.is_none() {
         return Ok(results);
@@ -14,41 +16,59 @@ pub fn response_to_vec<T: FromTushareData>(response: TushareResponse) -> Result<
     let Some(data) = response.data else {
         return Ok(results);
     };
-    for item in  data.items {
+    for item in data.items {
         let converted = T::from_row(&data.fields, &item)?;
         results.push(converted);
     }
-    
+
     Ok(results)
 }
 
 /// Helper function to get field value by name
-pub fn get_field_value<'a>(fields: &[String], values: &'a [Value], field_name: &str) -> Result<&'a Value, TushareError> {
-    let index = fields.iter()
+pub fn get_field_value<'a>(
+    fields: &[String],
+    values: &'a [Value],
+    field_name: &str,
+) -> Result<&'a Value, TushareError> {
+    let index = fields
+        .iter()
         .position(|f| f == field_name)
         .ok_or_else(|| TushareError::ParseError(format!("Missing field: {}", field_name)))?;
-        
-    values.get(index)
-        .ok_or_else(|| TushareError::ParseError(format!("Value not found for field: {}", field_name)))
+
+    values.get(index).ok_or_else(|| {
+        TushareError::ParseError(format!("Value not found for field: {}", field_name))
+    })
 }
 
 /// Helper function to get string field value
-pub fn get_string_field(fields: &[String], values: &[Value], field_name: &str) -> Result<String, TushareError> {
+pub fn get_string_field(
+    fields: &[String],
+    values: &[Value],
+    field_name: &str,
+) -> Result<String, TushareError> {
     let value = get_field_value(fields, values, field_name)?;
-    value.as_str()
+    value
+        .as_str()
         .ok_or_else(|| TushareError::ParseError(format!("Field {} is not a string", field_name)))
         .map(|s| s.to_string())
 }
 
 /// Helper function to get optional string field value
-pub fn get_optional_string_field(fields: &[String], values: &[Value], field_name: &str) -> Result<Option<String>, TushareError> {
+pub fn get_optional_string_field(
+    fields: &[String],
+    values: &[Value],
+    field_name: &str,
+) -> Result<Option<String>, TushareError> {
     match get_field_value(fields, values, field_name) {
         Ok(value) => {
             if value.is_null() {
                 Ok(None)
             } else {
-                value.as_str()
-                    .ok_or_else(|| TushareError::ParseError(format!("Field {} is not a string", field_name)))
+                value
+                    .as_str()
+                    .ok_or_else(|| {
+                        TushareError::ParseError(format!("Field {} is not a string", field_name))
+                    })
                     .map(|s| Some(s.to_string()))
             }
         }
@@ -57,21 +77,33 @@ pub fn get_optional_string_field(fields: &[String], values: &[Value], field_name
 }
 
 /// Helper function to get float field value
-pub fn get_float_field(fields: &[String], values: &[Value], field_name: &str) -> Result<f64, TushareError> {
+pub fn get_float_field(
+    fields: &[String],
+    values: &[Value],
+    field_name: &str,
+) -> Result<f64, TushareError> {
     let value = get_field_value(fields, values, field_name)?;
-    value.as_f64()
+    value
+        .as_f64()
         .ok_or_else(|| TushareError::ParseError(format!("Field {} is not a number", field_name)))
 }
 
 /// Helper function to get optional float field value
-pub fn get_optional_float_field(fields: &[String], values: &[Value], field_name: &str) -> Result<Option<f64>, TushareError> {
+pub fn get_optional_float_field(
+    fields: &[String],
+    values: &[Value],
+    field_name: &str,
+) -> Result<Option<f64>, TushareError> {
     match get_field_value(fields, values, field_name) {
         Ok(value) => {
             if value.is_null() {
                 Ok(None)
             } else {
-                value.as_f64()
-                    .ok_or_else(|| TushareError::ParseError(format!("Field {} is not a number", field_name)))
+                value
+                    .as_f64()
+                    .ok_or_else(|| {
+                        TushareError::ParseError(format!("Field {} is not a number", field_name))
+                    })
                     .map(Some)
             }
         }
@@ -80,21 +112,33 @@ pub fn get_optional_float_field(fields: &[String], values: &[Value], field_name:
 }
 
 /// Helper function to get integer field value
-pub fn get_int_field(fields: &[String], values: &[Value], field_name: &str) -> Result<i64, TushareError> {
+pub fn get_int_field(
+    fields: &[String],
+    values: &[Value],
+    field_name: &str,
+) -> Result<i64, TushareError> {
     let value = get_field_value(fields, values, field_name)?;
-    value.as_i64()
+    value
+        .as_i64()
         .ok_or_else(|| TushareError::ParseError(format!("Field {} is not an integer", field_name)))
 }
 
 /// Helper function to get optional integer field value
-pub fn get_optional_int_field(fields: &[String], values: &[Value], field_name: &str) -> Result<Option<i64>, TushareError> {
+pub fn get_optional_int_field(
+    fields: &[String],
+    values: &[Value],
+    field_name: &str,
+) -> Result<Option<i64>, TushareError> {
     match get_field_value(fields, values, field_name) {
         Ok(value) => {
             if value.is_null() {
                 Ok(None)
             } else {
-                value.as_i64()
-                    .ok_or_else(|| TushareError::ParseError(format!("Field {} is not an integer", field_name)))
+                value
+                    .as_i64()
+                    .ok_or_else(|| {
+                        TushareError::ParseError(format!("Field {} is not an integer", field_name))
+                    })
                     .map(Some)
             }
         }
@@ -103,21 +147,33 @@ pub fn get_optional_int_field(fields: &[String], values: &[Value], field_name: &
 }
 
 /// Helper function to get boolean field value
-pub fn get_bool_field(fields: &[String], values: &[Value], field_name: &str) -> Result<bool, TushareError> {
+pub fn get_bool_field(
+    fields: &[String],
+    values: &[Value],
+    field_name: &str,
+) -> Result<bool, TushareError> {
     let value = get_field_value(fields, values, field_name)?;
-    value.as_bool()
+    value
+        .as_bool()
         .ok_or_else(|| TushareError::ParseError(format!("Field {} is not a boolean", field_name)))
 }
 
 /// Helper function to get optional boolean field value
-pub fn get_optional_bool_field(fields: &[String], values: &[Value], field_name: &str) -> Result<Option<bool>, TushareError> {
+pub fn get_optional_bool_field(
+    fields: &[String],
+    values: &[Value],
+    field_name: &str,
+) -> Result<Option<bool>, TushareError> {
     match get_field_value(fields, values, field_name) {
         Ok(value) => {
             if value.is_null() {
                 Ok(None)
             } else {
-                value.as_bool()
-                    .ok_or_else(|| TushareError::ParseError(format!("Field {} is not a boolean", field_name)))
+                value
+                    .as_bool()
+                    .ok_or_else(|| {
+                        TushareError::ParseError(format!("Field {} is not a boolean", field_name))
+                    })
                     .map(Some)
             }
         }
