@@ -1,10 +1,9 @@
 [package]
 name = "tushare-derive"
-version = "1.1.0"
+version = "0.1.0"
 edition = "2024"
 license = "MIT"
-description = "Procedural macros for tushare-api"
-authors = ["rock huang <manj22@163.com>"]
+description = "Procedural macros for tushare-rs-pro"
 
 [lib]
 proc-macro = true

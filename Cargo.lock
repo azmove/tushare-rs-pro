@@ -1576,8 +1576,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
-name = "tushare-api"
-version = "1.2.7"
+name = "tushare-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "tushare-rs-pro"
+version = "0.1.0"
 dependencies = [
  "bigdecimal",
  "chrono",
@@ -1594,15 +1603,6 @@ dependencies = [
  "tracing-subscriber",
  "tushare-derive",
  "uuid",
-]
-
-[[package]]
-name = "tushare-derive"
-version = "1.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.104",
 ]
 
 [[package]]

@@ -23,6 +23,10 @@
 - [📋 前置条件](#-前置条件)
 - [📦 安装](#-安装)
 - [🚀 快速开始](#-快速开始)
+  - [1. 最简示例：获取股票列表](#1-最简示例获取股票列表)
+  - [2. 获取日线行情](#2-获取日线行情)
+  - [3. 使用 TushareClientEx（限流 + 自动重试）](#3-使用-tushareclientex限流--自动重试)
+  - [4. 自定义 Struct](#4-自定义-struct不使用预定义模型)
 - [📖 API 使用指南](#-api-使用指南)
   - [1. 如何导入 Tushare API](#1-如何导入-tushare-api)
   - [2. 如何创建 Tushare 客户端](#2-如何创建-tushare-客户端)
@@ -32,6 +36,7 @@
   - [5. 如何设置日志](#5-如何设置日志)
 - [🗂️ 预定义模型](#️-预定义模型)
 - [🧪 运行示例](#-运行示例)
+- [🙏 致谢](#-致谢)
 - [📄 许可证](#-许可证)
 - [📞 支持](#-支持)
 
@@ -48,55 +53,150 @@
 
 ## 📋 前置条件
 
-- **Tushare API Token**：在 [Tushare Pro](https://tushare.pro/) 注册以获取API token
+- **Rust** ≥ 1.85（2024 edition）
+- **Tushare API Token**：在 [Tushare Pro](https://tushare.pro/) 注册获取
 
 ## 📦 安装
 
-在 `Cargo.toml` 中添加：
+### 方式一：作为依赖引入（推荐）
 
 ```toml
 [dependencies]
-tushare-api = "1.2.7"
-
-# 可选：启用第三方类型支持
-# tushare-api = { version = "1.2.7", features = ["rust_decimal", "chrono"] }
-
-# 或启用所有第三方类型
-# tushare-api = { version = "1.2.7", features = ["all_types"] }
-
-# 可选：启用 tracing 支持
-# tushare-api = { version = "1.2.7", features = ["tracing"] }
+tushare-rs-pro = { git = "https://github.com/azmove/tushare-rs-pro.git" }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
+
+### 方式二：从源码构建
+
+```bash
+git clone https://github.com/azmove/tushare-rs-pro.git
+cd tushare-rs-pro
+cargo build    # 自动编译主库 + tushare-derive 宏
+cargo test     # 运行 14 个测试
+```
+
+> **项目结构说明：** `tushare-derive/` 是 proc macro crate，提供 `#[derive(DeriveFromTushareData)]`。
+> Rust 要求 proc macro 必须在独立 crate 中，这与 `serde`/`serde_derive` 是相同模式。
+> 用户无需关心它——Cargo workspace 会自动处理编译。
 
 ## 🚀 快速开始
 
+### 1. 最简示例：获取股票列表
+
 ```rust
-use tushare_api::TushareClient;
+use tushare_api::{TushareClient, Api, TushareEntityList, request};
+use tushare_api::models::StockBasicModel;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 设置环境变量
-    std::env::set_var("TUSHARE_TOKEN", "your_token_here");
-    
-    // 创建客户端
-    let client = TushareClient::from_env()?;
-    
-    // 调用 API
-    let response = client
-        .call_api(
-            r#"
-            {
-                "api_name": "stock_basic",
-                "params": { "list_status": "L" },
-                "fields": ["ts_code", "name", "industry"]
-            }
-            "#,
-        )
-        .await?;
-    
-    if let Some(data) = response.data {
-        println!("获取到 {} 条记录", data.items.len());
+    // 设置 Token（也可设环境变量 TUSHARE_TOKEN）
+    let client = TushareClient::new("your_token_here");
+
+    // 构建请求
+    let req = request!(Api::StockBasic, {
+        "list_status" => "L"
+    }, [
+        "ts_code", "name", "industry", "list_date"
+    ]);
+
+    // 调用并解析为强类型
+    let stocks: TushareEntityList<StockBasicModel> = client.call_api_as(req).await?;
+
+    for s in stocks.iter().take(5) {
+        println!("{} {} 行业:{}", 
+            s.ts_code, s.name, 
+            s.industry.as_deref().unwrap_or("-"));
     }
+    Ok(())
+}
+```
+
+### 2. 获取日线行情
+
+```rust
+use tushare_api::{TushareClient, Api, TushareEntityList, request};
+use tushare_api::models::DailyModel;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = TushareClient::from_env()?; // 从 TUSHARE_TOKEN 环境变量读取
+
+    let req = request!(Api::Daily, {
+        "ts_code" => "000001.SZ",
+        "start_date" => "20260101",
+        "end_date" => "20260401"
+    }, [
+        "ts_code", "trade_date", "open", "high", "low", "close", "vol"
+    ]);
+
+    let data: TushareEntityList<DailyModel> = client.call_api_as(req).await?;
+
+    for d in data.iter().take(3) {
+        println!("{} 开:{:.2} 高:{:.2} 低:{:.2} 收:{:.2}",
+            d.trade_date,
+            d.open.unwrap_or(0.0),
+            d.high.unwrap_or(0.0),
+            d.low.unwrap_or(0.0),
+            d.close.unwrap_or(0.0));
+    }
+    Ok(())
+}
+```
+
+### 3. 使用 TushareClientEx（限流 + 自动重试）
+
+```rust
+use tushare_api::{TushareClientEx, Api, TushareEntityList, request};
+use tushare_api::models::IncomeModel;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // ClientEx 支持：每分钟最多 N 次请求 + 失败自动重试
+    let client = TushareClientEx::from_env()?
+        .with_max_retry(3)
+        .with_rate_limit(60);  // 每分钟 60 次
+
+    let req = request!(Api::Income, {
+        "ts_code" => "000001.SZ",
+        "period" => "20251231"
+    }, [
+        "ts_code", "ann_date", "end_date", "revenue", "n_income"
+    ]);
+
+    let data: TushareEntityList<IncomeModel> = client.call_api_as(req).await?;
+    
+    for d in data.iter() {
+        println!("{} 营收:{:?} 净利润:{:?}", 
+            d.end_date, d.revenue, d.n_income);
+    }
+    Ok(())
+}
+```
+
+### 4. 自定义 Struct（不使用预定义模型）
+
+```rust
+use tushare_api::{DeriveFromTushareData, TushareClient, Api, TushareEntityList, request};
+
+#[derive(Debug, Clone, DeriveFromTushareData)]
+pub struct MyStock {
+    pub ts_code: String,
+    pub name: String,
+    #[tushare(field = "list_date")]   // API 字段名映射
+    pub listing_date: Option<String>,
+    #[tushare(skip)]                   // 跳过，使用 Default
+    pub local_note: String,
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = TushareClient::from_env()?;
+    let req = request!(Api::StockBasic, {
+        "list_status" => "L"
+    }, ["ts_code", "name", "list_date"]);
+
+    let stocks: TushareEntityList<MyStock> = client.call_api_as(req).await?;
+    println!("共 {} 只股票", stocks.len());
     Ok(())
 }
 ```
@@ -1126,6 +1226,6 @@ cargo run --example tracing_example --features tracing
 
 ## 📞 支持
 
-- 📖 [文档](https://docs.rs/tushare-api)
-- 🐛 [问题跟踪](https://github.com/azmove/tushare-rs-pro/issues)
-- 💬 [讨论](https://github.com/azmove/tushare-rs-pro/discussions)
+- 🐛 [Issues](https://github.com/azmove/tushare-rs-pro/issues)
+- 💬 [Discussions](https://github.com/azmove/tushare-rs-pro/discussions)
+- 📖 [Tushare Pro 官方文档](https://tushare.pro/document/2)
