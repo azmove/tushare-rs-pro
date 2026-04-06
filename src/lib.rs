@@ -1,59 +1,81 @@
-//! # Tushare API Client Library
+//! # tushare-rs-pro — Tushare Pro API Rust SDK
 //!
-//! A comprehensive Rust client library for accessing Tushare financial data APIs.
-//! This library provides a simple and efficient way to fetch financial data from Tushare,
-//! with built-in support for request/response handling, error management, and logging.
+//! 面向量化交易和金融数据分析的 Rust 客户端库，提供对 [Tushare Pro](https://tushare.pro/)
+//! 全部 API 的异步、类型安全访问。
 //!
-//! ## Features
+//! ## 核心特性
 //!
-//! - **Easy-to-use API**: Simple client interface for making Tushare API calls
-//! - **Type Safety**: Strong typing for requests and responses
-//! - **Error Handling**: Comprehensive error types and handling
-//! - **Logging Support**: Built-in logging with configurable levels
-//! - **Async Support**: Full async/await support with tokio
-//! - **Flexible Configuration**: Customizable HTTP client settings
-//! - **Environment Integration**: Automatic token loading from environment variables
-//! - **Automatic Conversion**: Derive macros for automatic struct conversion from API responses
+//! - **77 个预定义模型** — 覆盖股票、基金、指数、债券、ETF、期货、期权、港股、美股、
+//!   外汇、宏观经济、行业分类等 12 大领域，开箱即用
+//! - **86 个 API 枚举** — 编译期类型安全，杜绝 API 名称拼写错误
+//! - **Derive 宏** — `#[derive(DeriveFromTushareData)]` 自动将 API 响应映射到自定义 struct
+//! - **异步架构** — 基于 `tokio` + `reqwest`，高性能并发请求
+//! - **生产就绪** — 内置限流、指数退避重试、超时控制、全面错误处理
 //!
-//! ## Quick Start
+//! ## 快速开始
+//!
+//! ### 使用预定义模型（推荐）
 //!
 //! ```no_run
-//! use tushare_api::{TushareClient, Api, TushareRequest, TushareEntityList, params, fields};
-//! use tushare_api::DeriveFromTushareData;
-//!
-//! // Define your data structure with derive macro
-//! #[derive(Debug, Clone, DeriveFromTushareData)]
-//! pub struct Stock {
-//!     ts_code: String,
-//!     symbol: String,
-//!     name: String,
-//!     area: Option<String>,
-//! }
+//! use tushare_api::{TushareClient, Api, TushareEntityList, TushareRequest, request, params, fields};
+//! use tushare_api::models::DailyModel;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     // Create client from environment variable TUSHARE_TOKEN
 //!     let client = TushareClient::from_env()?;
-//!     
-//!     // Create request using manual construction
-//!     let request = TushareRequest::new(
-//!         Api::StockBasic,
-//!         params!("list_status" => "L"),
-//!         fields!["ts_code", "symbol", "name", "area"]
-//!     );
-//!     
-//!     // Make the API call with automatic conversion
-//!     let stocks: TushareEntityList<Stock> = client.call_api_as(request).await?;
-//!     
-//!     println!("Received {} stocks", stocks.len());
-//!     
-//!     for stock in stocks.iter().take(5) {
-//!         println!("{}: {}", stock.ts_code, stock.name);
+//!
+//!     let req = request!(Api::Daily, {
+//!         "ts_code" => "000001.SZ",
+//!         "start_date" => "20260101",
+//!         "end_date" => "20260401"
+//!     }, [
+//!         "ts_code", "trade_date", "open", "high", "low", "close", "vol"
+//!     ]);
+//!
+//!     let data: TushareEntityList<DailyModel> = client.call_api_as(req).await?;
+//!
+//!     for d in data.iter().take(3) {
+//!         println!("{} 收盘: {:.2}", d.trade_date, d.close.unwrap_or(0.0));
 //!     }
-//!     
 //!     Ok(())
 //! }
 //! ```
+//!
+//! ### 自定义 Struct
+//!
+//! ```no_run
+//! use tushare_api::{TushareClient, Api, TushareEntityList, TushareRequest, request, params, fields, DeriveFromTushareData};
+//!
+//! #[derive(Debug, Clone, DeriveFromTushareData)]
+//! pub struct MyStock {
+//!     pub ts_code: String,
+//!     pub name: String,
+//!     #[tushare(field = "list_date")]
+//!     pub listing_date: Option<String>,
+//! }
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let client = TushareClient::from_env()?;
+//! let stocks: TushareEntityList<MyStock> = client.call_api_as(
+//!     request!(Api::StockBasic, { "list_status" => "L" }, ["ts_code", "name", "list_date"])
+//! ).await?;
+//! println!("共 {} 只股票", stocks.len());
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## 模块概览
+//!
+//! | 模块 | 说明 |
+//! |------|------|
+//! | [`client`] | 核心客户端 [`TushareClient`]，支持 `from_env()` / `new()` / `with_timeout()` |
+//! | [`client_ex`] | 增强客户端 [`TushareClientEx`]，带限流和重试 |
+//! | [`models`] | 77 个预定义数据模型，按领域分 12 个子模块 |
+//! | [`api`] | [`Api`] 枚举（86 个变体），所有 Tushare API 的类型安全标识 |
+//! | [`types`] | 请求/响应类型、`request!` 宏、[`TushareEntityList`] |
+//! | [`traits`] | [`FromTushareData`] / [`FromTushareValue`] 转换 trait |
+//! | [`error`] | [`TushareError`] 错误类型 |
+//! | [`logging`] | 日志配置 |
 
 // Allow the derive macro's generated `tushare_api::` paths to resolve within this crate
 extern crate self as tushare_api;
