@@ -11,7 +11,7 @@
 
 **tushare-rs-pro** 是一个面向量化交易和金融数据分析的 Rust 客户端库，提供：
 
-- 🔒 编译期类型安全的 86 个 API 枚举，杜绝拼写错误
+- 🔒 编译期类型安全的 84 个 API 枚举，杜绝拼写错误
 - 📊 77 个预定义 struct 覆盖股票、基金、指数、债券、ETF、期货、期权、港股、美股、外汇、宏观经济、行业分类
 - ⚡ 基于 `tokio` + `reqwest` 的全异步架构
 - 🔄 生产级重试、限流、超时控制
@@ -45,7 +45,7 @@
 | 特性 | 说明 |
 |------|------|
 | 🚀 异步 | 基于 `tokio` + `reqwest`，高性能并发请求 |
-| 🔒 类型安全 | 86 个 `Api` 枚举变体，编译期保证 API 名称正确 |
+| 🔒 类型安全 | 84 个 `Api` 枚举变体，编译期保证 API 名称正确 |
 | 📦 预定义模型 | 77 个 struct 覆盖 12 大领域，`#[derive]` 自动映射 |
 | 🔄 生产就绪 | 限流、指数退避重试、超时、全面错误处理 |
 | 📊 第三方类型 | 可选支持 `rust_decimal`、`chrono`、`uuid`、`bigdecimal` |
@@ -74,13 +74,13 @@ tushare-rs-pro = { git = "https://github.com/azmove/tushare-rs-pro.git" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-### 方式二：从源码构建
+### 方式三：从源码构建
 
 ```bash
 git clone https://github.com/azmove/tushare-rs-pro.git
 cd tushare-rs-pro
-cargo build    # 自动编译主库 + tushare-derive 宏
-cargo test     # 运行 14 个测试
+cargo build    # 自动编译主库 + tushare-rs-pro-derive 宏
+cargo test     # 运行 15 个测试
 ```
 
 > **项目结构说明：** `tushare-derive/` 是 proc macro crate，提供 `#[derive(DeriveFromTushareData)]`。
@@ -92,7 +92,7 @@ cargo test     # 运行 14 个测试
 ### 1. 最简示例：获取股票列表
 
 ```rust
-use tushare_api::{TushareClient, Api, TushareEntityList, request};
+use tushare_api::{TushareClient, Api, TushareEntityList, TushareRequest, request};
 use tushare_api::models::StockBasicModel;
 
 #[tokio::main]
@@ -122,7 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### 2. 获取日线行情
 
 ```rust
-use tushare_api::{TushareClient, Api, TushareEntityList, request};
+use tushare_api::{TushareClient, Api, TushareEntityList, TushareRequest, request};
 use tushare_api::models::DailyModel;
 
 #[tokio::main]
@@ -155,7 +155,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust
 use std::time::Duration;
-use tushare_api::{TushareClient, TushareClientEx, RetryConfig, Api, TushareEntityList, request};
+use tushare_api::{TushareClient, TushareClientEx, RetryConfig, Api, TushareEntityList, TushareRequest, request};
 use tushare_api::models::IncomeModel;
 
 #[tokio::main]
@@ -191,7 +191,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### 4. 自定义 Struct（不使用预定义模型）
 
 ```rust
-use tushare_api::{DeriveFromTushareData, TushareClient, Api, TushareEntityList, request};
+use tushare_api::{DeriveFromTushareData, TushareClient, Api, TushareEntityList, TushareRequest, request};
 
 #[derive(Debug, Clone, DeriveFromTushareData)]
 pub struct MyStock {
@@ -316,8 +316,8 @@ let client = TushareClient::builder()
 
 ```rust
 use std::time::Duration;
-use tushare_api::{Api, TushareClient, TushareClientEx, TushareEntityList, request};
-use tushare_api::client_ex::RetryConfig;
+use tushare_api::{Api, TushareClient, TushareClientEx, TushareEntityList, TushareRequest, request};
+use tushare_api::RetryConfig;
 use tushare_api::DeriveFromTushareData;
 
 #[derive(Debug, Clone, DeriveFromTushareData)]
@@ -356,10 +356,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #### 方法 1：使用便捷宏（推荐）
 
 ```rust
-use tushare_api::{request, Api};
+use tushare_api::{request, TushareRequest, Api};
 
 // 带参数和字段的单个 API 调用
-let response = client.call_api(request!(Api::StockBasic, {
+let response = client.call_api(&request!(Api::StockBasic, {
     "list_status" => "L",
     "exchange" => "SSE"
 }, [
@@ -367,12 +367,12 @@ let response = client.call_api(request!(Api::StockBasic, {
 ])).await?;
 
 // 无参数的 API 调用
-let response = client.call_api(request!(Api::TradeCal, {}, [
+let response = client.call_api(&request!(Api::TradeCal, {}, [
     "exchange", "cal_date", "is_open"
 ])).await?;
 
 // 无字段的 API 调用（获取所有字段）
-let response = client.call_api(request!(Api::StockBasic, {
+let response = client.call_api(&request!(Api::StockBasic, {
     "list_status" => "L"
 }, [])).await?;
 ```
@@ -388,7 +388,7 @@ let request = TushareRequest {
     fields: fields!("ts_code", "name", "industry"),
 };
 
-let response = client.call_api(request).await?;
+let response = client.call_api(&request).await?;
 ```
 
 #### 方法 3：手动构建
@@ -405,7 +405,7 @@ let request = TushareRequest {
     fields: vec!["ts_code".to_string(), "name".to_string()],
 };
 
-let response = client.call_api(request).await?;
+let response = client.call_api(&request).await?;
 ```
 
 #### 方法 4：直接使用字符串参数
@@ -414,7 +414,7 @@ let response = client.call_api(request).await?;
 // 直接传 JSON 字符串（适合快速调试/复制粘贴 API 请求）
 let response = client
     .call_api(
-        r#"
+        &r#"
         {
             "api_name": "stock_basic",
             "params": { "list_status": "L", "exchange": "SSE" },
@@ -430,37 +430,37 @@ let response = client
 `call_api` 的签名是泛型的：
 
 ```rust
-pub async fn call_api<T>(&self, request: T) -> TushareResult<TushareResponse>
+pub async fn call_api<T>(&self, request: &T) -> TushareResult<TushareResponse>
 where
-    T: TryInto<TushareRequest>,
-    <T as TryInto<TushareRequest>>::Error: Into<TushareError>,
+    for<'a> &'a T: TryInto<TushareRequest>,
+    for<'a> <&'a T as TryInto<TushareRequest>>::Error: Into<TushareError>,
 ```
 
 所以你可以直接传入：
 
 ```rust
-// 1) 直接传 TushareRequest
+// 1) 直接传 &TushareRequest
 let req = TushareRequest {
     api_name: Api::StockBasic,
     params: params!("list_status" => "L"),
     fields: fields!("ts_code", "name"),
 };
-let response = client.call_api(req).await?;
+let response = client.call_api(&req).await?;
 
-// 2) 直接传 &str 
-let response = client.call_api(r#"{
+// 2) 直接传 &&str 
+let response = client.call_api(&r#"{
     "api_name": "stock_basic",
     "params": { "list_status": "L" },
     "fields": ["ts_code", "name"]
 }"#).await?;
 
-// 3) 直接传 String
+// 3) 直接传 &String
 let json = r#"{
     "api_name": "stock_basic",
     "params": { "list_status": "L" },
     "fields": ["ts_code", "name"]
 }"#.to_string();
-let response = client.call_api(json).await?;
+let response = client.call_api(&json).await?;
 ```
 
 ### 4. 将返回的数据转换为自定义结构体
@@ -470,7 +470,7 @@ let response = client.call_api(json).await?;
 #### 使用过程宏
 
 ```rust
-use tushare_api::{TushareClient, Api, request, TushareEntityList};
+use tushare_api::{TushareClient, Api, request, TushareRequest, TushareEntityList};
 use tushare_api::DeriveFromTushareData;
 
 // 使用自动转换定义您的结构体
@@ -594,7 +594,7 @@ pub struct Stock {
 ```rust
 let stocks: TushareEntityList<Stock> = client.call_api_as(request).await?;
 // 或者
-let stocks = client.call_api_as::<Stock>(request).await?;
+let stocks = client.call_api_as::<Stock, _>(request).await?;
 ```
 
 **您会得到一个 `TushareEntityList<Stock>` 结构体，包含：**
@@ -620,7 +620,7 @@ let stocks = client.call_api_as::<Stock>(request).await?;
 - `count: i64` - 总记录数
 
 ```rust
-use tushare_api::{TushareClient, Api, request, TushareEntityList};
+use tushare_api::{TushareClient, Api, request, TushareRequest, TushareEntityList};
 use tushare_api::DeriveFromTushareData;
 
 #[derive(Debug, Clone, DeriveFromTushareData)]
@@ -682,7 +682,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 库支持使用 `#[tushare(date_format = "...")]` 属性进行自定义日期格式解析。这在处理返回非标准日期格式的 API 时特别有用。
 
 ```rust
-use tushare_api::{TushareClient, Api, request, TushareEntityList, DeriveFromTushareData};
+use tushare_api::{TushareClient, Api, request, TushareRequest, TushareEntityList, DeriveFromTushareData};
 
 #[derive(Debug, Clone, DeriveFromTushareData)]
 pub struct CustomDateFormats {
@@ -782,16 +782,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```toml
 [dependencies]
 # 启用特定类型
-tushare-api = { version = "1.2.7", features = ["rust_decimal", "chrono"] }
+tushare-rs-pro = { version = "0.1", features = ["rust_decimal", "chrono"] }
 
 # 或启用所有第三方类型
-tushare-api = { version = "1.2.7", features = ["all_types"] }
+tushare-rs-pro = { version = "0.1", features = ["all_types"] }
 ```
 
 ##### 高精度小数示例
 
 ```rust
-use tushare_api::{TushareClient, Api, request, TushareEntityList, DeriveFromTushareData};
+use tushare_api::{TushareClient, Api, request, TushareRequest, TushareEntityList, DeriveFromTushareData};
 
 #[derive(Debug, Clone, DeriveFromTushareData)]
 pub struct FinancialData {
@@ -839,7 +839,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ##### 日期/时间类型示例
 
 ```rust
-use tushare_api::{TushareClient, Api, request, TushareEntityList, DeriveFromTushareData};
+use tushare_api::{TushareClient, Api, request, TushareRequest, TushareEntityList, DeriveFromTushareData};
 
 #[derive(Debug, Clone, DeriveFromTushareData)]
 pub struct DateTimeData {
@@ -878,7 +878,7 @@ pub struct DateTimeData {
 如果您不想使用过程宏，仍然可以使用手动方法：
 
 ```rust
-use tushare_api::{TushareClient, Api, request, utils::response_to_vec, traits::FromTushareData};
+use tushare_api::{TushareClient, Api, request, TushareRequest, utils::response_to_vec, traits::FromTushareData};
 use tushare_api::error::TushareError;
 use serde_json::Value;
 
@@ -915,7 +915,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = TushareClient::from_env()?;
     
     // 获取原始响应
-    let response = client.call_api(request!(Api::StockBasic, {
+    let response = client.call_api(&request!(Api::StockBasic, {
         "list_status" => "L"
     }, [
         "ts_code", "name", "area"
@@ -959,7 +959,7 @@ let client = TushareClient::builder()
 
 ```toml
 [dependencies]
-tushare-api = { version = "1.2.7", features = ["tracing"] }
+tushare-rs-pro = { version = "0.1", features = ["tracing"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 ```
@@ -1023,7 +1023,7 @@ INFO  [abc123] API call successful, duration: 245ms, data rows returned: 100
 ### 快速使用
 
 ```rust
-use tushare_api::{TushareClient, Api, TushareEntityList, request};
+use tushare_api::{TushareClient, Api, TushareEntityList, TushareRequest, request};
 use tushare_api::models::DailyModel;  // 导入预定义模型
 
 #[tokio::main]

@@ -7,7 +7,7 @@
 //!
 //! - **77 个预定义模型** — 覆盖股票、基金、指数、债券、ETF、期货、期权、港股、美股、
 //!   外汇、宏观经济、行业分类等 12 大领域，开箱即用
-//! - **86 个 API 枚举** — 编译期类型安全，杜绝 API 名称拼写错误
+//! - **84 个 API 枚举** — 编译期类型安全，杜绝 API 名称拼写错误
 //! - **Derive 宏** — `#[derive(DeriveFromTushareData)]` 自动将 API 响应映射到自定义 struct
 //! - **异步架构** — 基于 `tokio` + `reqwest`，高性能并发请求
 //! - **生产就绪** — 内置限流、指数退避重试、超时控制、全面错误处理
@@ -71,7 +71,7 @@
 //! | [`client`] | 核心客户端 [`TushareClient`]，支持 `from_env()` / `new()` / `with_timeout()` |
 //! | [`client_ex`] | 增强客户端 [`TushareClientEx`]，带限流和重试 |
 //! | [`models`] | 77 个预定义数据模型，按领域分 12 个子模块 |
-//! | [`api`] | [`Api`] 枚举（86 个变体），所有 Tushare API 的类型安全标识 |
+//! | [`api`] | [`Api`] 枚举（84 个变体），所有 Tushare API 的类型安全标识 |
 //! | [`types`] | 请求/响应类型、`request!` 宏、[`TushareEntityList`] |
 //! | [`traits`] | [`FromTushareData`] / [`FromTushareValue`] 转换 trait |
 //! | [`error`] | [`TushareError`] 错误类型 |
@@ -95,7 +95,7 @@ pub mod utils;
 
 // Re-export main types for convenience
 pub use api::Api;
-pub use client::{HttpClientConfig, TushareClient};
+pub use client::{HttpClientConfig, TushareClient, TushareClientBuilder};
 pub use client_ex::{RetryConfig, TushareClientEx};
 pub use error::{TushareError, TushareResult};
 pub use logging::{LogConfig, LogLevel, Logger};
