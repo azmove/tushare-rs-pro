@@ -344,6 +344,11 @@ impl TushareClient {
     /// * `connect_timeout` - Connection timeout duration
     /// * `timeout` - Request timeout duration
     ///
+    /// # Panics
+    ///
+    /// Panics if the HTTP client fails to build (extremely unlikely with valid config).
+    /// Prefer [`try_with_timeout`](Self::try_with_timeout) for non-panicking variant.
+    ///
     /// # Example
     ///
     /// ```rust
@@ -357,19 +362,44 @@ impl TushareClient {
     /// );
     /// ```
     pub fn with_timeout(token: &str, connect_timeout: Duration, timeout: Duration) -> Self {
+        Self::try_with_timeout(token, connect_timeout, timeout)
+            .expect("failed to build HTTP client with the given configuration")
+    }
+
+    /// Create a new Tushare client with custom timeout settings (non-panicking).
+    ///
+    /// Unlike [`with_timeout`](Self::with_timeout), this returns a `Result` instead of
+    /// panicking on HTTP client creation failure.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tushare_api::{TushareClient, TushareResult};
+    /// use std::time::Duration;
+    ///
+    /// let client = TushareClient::try_with_timeout(
+    ///     "your_token_here",
+    ///     Duration::from_secs(5),
+    ///     Duration::from_secs(60),
+    /// )?;
+    /// # Ok::<(), tushare_api::TushareError>(())
+    /// ```
+    pub fn try_with_timeout(
+        token: &str,
+        connect_timeout: Duration,
+        timeout: Duration,
+    ) -> TushareResult<Self> {
         let http_config = HttpClientConfig::new()
             .with_connect_timeout(connect_timeout)
             .with_timeout(timeout);
 
-        let client = http_config
-            .build_client()
-            .expect("Failed to create HTTP client");
+        let client = http_config.build_client()?;
 
-        TushareClient {
+        Ok(TushareClient {
             token: token.to_string(),
             client,
             logger: Logger::new(LogConfig::default()),
-        }
+        })
     }
 
     /// Call Tushare API with flexible string types support
@@ -437,16 +467,27 @@ impl TushareClient {
         request: &TushareRequest,
     ) -> TushareResult<TushareResponse> {
         let start_time = Instant::now();
-        // Log API call start
+
+        self.log_request_start(request_id, request);
+
+        let response_text = self
+            .send_http_request(request_id, request, &start_time)
+            .await?;
+
+        let tushare_response = self.parse_response(request_id, &response_text, &start_time)?;
+
+        self.validate_and_log_response(request_id, tushare_response, &start_time)
+    }
+
+    fn log_request_start(&self, request_id: &str, request: &TushareRequest) {
         self.logger.log_api_start(
-            &request_id,
+            request_id,
             &request.api_name.name(),
             request.params.len(),
             request.fields.len(),
         );
 
-        // Log detailed request information (if enabled)
-        let token_preview_string = if self.logger.config().log_sensitive_data {
+        let token_preview = if self.logger.config().log_sensitive_data {
             Some(format!(
                 "token: {}***",
                 &self.token[..self.token.len().min(8)]
@@ -456,13 +497,20 @@ impl TushareClient {
         };
 
         self.logger.log_request_details(
-            &request_id,
+            request_id,
             &request.api_name.name(),
             &format!("{:?}", request.params),
             &format!("{:?}", request.fields),
-            token_preview_string.as_deref(),
+            token_preview.as_deref(),
         );
+    }
 
+    async fn send_http_request(
+        &self,
+        request_id: &str,
+        request: &TushareRequest,
+        start_time: &Instant,
+    ) -> TushareResult<String> {
         let internal_request = InternalTushareRequest {
             api_name: ApiNameRef(&request.api_name),
             token: &self.token,
@@ -470,7 +518,7 @@ impl TushareClient {
             fields: &request.fields,
         };
 
-        self.logger.log_http_request(&request_id);
+        self.logger.log_http_request(request_id);
 
         let response = self
             .client
@@ -479,70 +527,74 @@ impl TushareClient {
             .send()
             .await
             .map_err(|e| {
-                let elapsed = start_time.elapsed();
                 self.logger
-                    .log_http_error(&request_id, elapsed, &e.to_string());
+                    .log_http_error(request_id, start_time.elapsed(), &e.to_string());
                 e
             })?;
 
         let status = response.status();
-        self.logger.log_http_response(&request_id, status.as_u16());
+        self.logger.log_http_response(request_id, status.as_u16());
 
         let response_text = response.text().await.map_err(|e| {
-            let elapsed = start_time.elapsed();
             self.logger
-                .log_response_read_error(&request_id, elapsed, &e.to_string());
+                .log_response_read_error(request_id, start_time.elapsed(), &e.to_string());
             e
         })?;
-        self.logger.log_raw_response(&request_id, &response_text);
 
-        let tushare_response: TushareResponse =
-            serde_json::from_str(&response_text).map_err(|e| {
-                let elapsed = start_time.elapsed();
-                self.logger.log_json_parse_error(
-                    &request_id,
-                    elapsed,
-                    &e.to_string(),
-                    &response_text,
-                );
-                e
-            })?;
+        self.logger.log_raw_response(request_id, &response_text);
+        Ok(response_text)
+    }
 
+    fn parse_response(
+        &self,
+        request_id: &str,
+        response_text: &str,
+        start_time: &Instant,
+    ) -> TushareResult<TushareResponse> {
+        serde_json::from_str(response_text).map_err(|e| {
+            self.logger.log_json_parse_error(
+                request_id,
+                start_time.elapsed(),
+                &e.to_string(),
+                response_text,
+            );
+            TushareError::from(e)
+        })
+    }
+
+    fn validate_and_log_response(
+        &self,
+        request_id: &str,
+        response: TushareResponse,
+        start_time: &Instant,
+    ) -> TushareResult<TushareResponse> {
         let elapsed = start_time.elapsed();
 
-        if tushare_response.code != 0 {
-            let message = format!(
-                "error code: {}, error msg: {}",
-                tushare_response.code,
-                tushare_response.msg.clone().unwrap_or_default()
-            );
+        if response.code != 0 {
+            let msg = response.msg.as_deref().unwrap_or("<no message>");
+            let message = format!("error code: {}, error msg: {}", response.code, msg);
             self.logger
-                .log_api_error(&request_id, elapsed, tushare_response.code, &message);
+                .log_api_error(request_id, elapsed, response.code, &message);
             return Err(TushareError::ApiError {
-                code: tushare_response.code,
+                code: response.code,
                 message,
             });
         }
 
-        // Log success information and performance metrics
-        self.logger.log_api_success(
-            &request_id,
-            elapsed,
-            tushare_response
-                .data
-                .clone()
-                .map(|data| data.items.len())
-                .unwrap_or(0),
-        );
+        let data_count = response
+            .data
+            .as_ref()
+            .map(|data| data.items.len())
+            .unwrap_or(0);
+        self.logger.log_api_success(request_id, elapsed, data_count);
 
-        // Log response details (if enabled)
         self.logger.log_response_details(
-            &request_id,
-            &tushare_response.request_id,
-            &format!("{:?}", tushare_response.data.as_ref().map(|d| &d.fields)),
+            request_id,
+            &response.request_id,
+            &format!("{:?}", response.data.as_ref().map(|d| &d.fields)),
         );
 
-        Ok(tushare_response)
+        Ok(response)
     }
 
     /// 调用 Tushare API，并将响应的 `data.items` 解析为强类型的 [`TushareEntityList<T>`]。

@@ -9,18 +9,13 @@ use serde_json::Value;
 pub fn response_to_vec<T: FromTushareData>(
     response: TushareResponse,
 ) -> Result<Vec<T>, TushareError> {
-    let mut results = Vec::new();
-    if response.data.is_none() {
-        return Ok(results);
-    }
     let Some(data) = response.data else {
-        return Ok(results);
+        return Ok(Vec::new());
     };
-    for item in data.items {
-        let converted = T::from_row(&data.fields, &item)?;
-        results.push(converted);
+    let mut results = Vec::with_capacity(data.items.len());
+    for item in &data.items {
+        results.push(T::from_row(&data.fields, item)?);
     }
-
     Ok(results)
 }
 
@@ -180,75 +175,95 @@ pub fn get_optional_bool_field(
         Err(_) => Ok(None), // Field not present
     }
 }
-//
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use crate::{TushareData, TushareResponse};
-//     use serde_json::json;
-//
-//     #[derive(Debug, PartialEq)]
-//     struct TestStock {
-//         ts_code: String,
-//         symbol: String,
-//         name: String,
-//         price: Option<f64>,
-//     }
-//
-//     impl FromTushareData for TestStock {
-//         fn from_row(fields: &[String], values: &[Value]) -> Result<Self, TushareError> {
-//             Ok(TestStock {
-//                 ts_code: get_string_field(fields, values, "ts_code")?,
-//                 symbol: get_string_field(fields, values, "symbol")?,
-//                 name: get_string_field(fields, values, "name")?,
-//                 price: get_optional_float_field(fields, values, "price")?,
-//             })
-//         }
-//     }
-//
-//   //  #[test]
-//     fn test_response_to_vec() {
-//         let response = TushareResponse {
-//             request_id: "test".to_string(),
-//             code: 0,
-//             msg: None,
-//             data: TushareData {
-//                 fields: vec![
-//                     "ts_code".to_string(),
-//                     "symbol".to_string(),
-//                     "name".to_string(),
-//                     "price".to_string(),
-//                 ],
-//                 items: vec![
-//                     vec![
-//                         json!("000001.SZ"),
-//                         json!("000001"),
-//                         json!("平安银行"),
-//                         json!(10.5),
-//                     ],
-//                     vec![
-//                         json!("000002.SZ"),
-//                         json!("000002"),
-//                         json!("万科A"),
-//                         json!(null),
-//                     ],
-//                 ],
-//                 has_more: false,
-//                 count: 2,
-//             },
-//         };
-//
-//         let stocks: Vec<TestStock> = response_to_vec(response).unwrap();
-//
-//         assert_eq!(stocks.len(), 2);
-//         assert_eq!(stocks[0].ts_code, "000001.SZ");
-//         assert_eq!(stocks[0].symbol, "000001");
-//         assert_eq!(stocks[0].name, "平安银行");
-//         assert_eq!(stocks[0].price, Some(10.5));
-//
-//         assert_eq!(stocks[1].ts_code, "000002.SZ");
-//         assert_eq!(stocks[1].symbol, "000002");
-//         assert_eq!(stocks[1].name, "万科A");
-//         assert_eq!(stocks[1].price, None);
-//     }
-// }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::TushareResponse;
+    use serde_json::json;
+
+    #[derive(Debug, PartialEq)]
+    struct TestStock {
+        ts_code: String,
+        symbol: String,
+        name: String,
+        price: Option<f64>,
+    }
+
+    impl FromTushareData for TestStock {
+        fn from_row(fields: &[String], values: &[Value]) -> Result<Self, TushareError> {
+            Ok(TestStock {
+                ts_code: get_field_value(fields, values, "ts_code")?
+                    .as_str()
+                    .ok_or_else(|| TushareError::ParseError("ts_code is not a string".into()))?
+                    .to_string(),
+                symbol: get_field_value(fields, values, "symbol")?
+                    .as_str()
+                    .ok_or_else(|| TushareError::ParseError("symbol is not a string".into()))?
+                    .to_string(),
+                name: get_field_value(fields, values, "name")?
+                    .as_str()
+                    .ok_or_else(|| TushareError::ParseError("name is not a string".into()))?
+                    .to_string(),
+                price: {
+                    let val = get_field_value(fields, values, "price")?;
+                    if val.is_null() {
+                        None
+                    } else {
+                        Some(
+                            val.as_f64().ok_or_else(|| {
+                                TushareError::ParseError("price is not f64".into())
+                            })?,
+                        )
+                    }
+                },
+            })
+        }
+    }
+
+    #[test]
+    fn test_response_to_vec() {
+        let response = TushareResponse {
+            request_id: "test".to_string(),
+            code: 0,
+            msg: None,
+            data: Some(crate::types::TushareData {
+                fields: vec![
+                    "ts_code".to_string(),
+                    "symbol".to_string(),
+                    "name".to_string(),
+                    "price".to_string(),
+                ],
+                items: vec![
+                    vec![
+                        json!("000001.SZ"),
+                        json!("000001"),
+                        json!("平安银行"),
+                        json!(10.5),
+                    ],
+                    vec![
+                        json!("000002.SZ"),
+                        json!("000002"),
+                        json!("万科A"),
+                        json!(null),
+                    ],
+                ],
+                has_more: false,
+                count: 2,
+            }),
+        };
+
+        let stocks: Vec<TestStock> = response_to_vec(response).unwrap();
+
+        assert_eq!(stocks.len(), 2);
+        assert_eq!(stocks[0].ts_code, "000001.SZ");
+        assert_eq!(stocks[0].symbol, "000001");
+        assert_eq!(stocks[0].name, "平安银行");
+        assert_eq!(stocks[0].price, Some(10.5));
+
+        assert_eq!(stocks[1].ts_code, "000002.SZ");
+        assert_eq!(stocks[1].symbol, "000002");
+        assert_eq!(stocks[1].name, "万科A");
+        assert_eq!(stocks[1].price, None);
+    }
+}
