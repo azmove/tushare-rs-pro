@@ -1,14 +1,25 @@
-# Tushare API - Rust 库
+# 🦀 tushare-rs-pro — Tushare Pro API Rust SDK
 
+[![CI](https://github.com/azmove/tushare-rs-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/azmove/tushare-rs-pro/actions)
 [![Crates.io](https://img.shields.io/crates/v/tushare-api.svg)](https://crates.io/crates/tushare-api)
 [![Documentation](https://docs.rs/tushare-api/badge.svg)](https://docs.rs/tushare-api)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-一个用于访问 Tushare 金融数据 API的Rust 客户端库。该库提供类型安全的异步访问所有 Tushare 数据接口，并提供高级功能，支持对API级别进行限流和重试。
+> **Rust SDK for [Tushare Pro](https://tushare.pro/) — 中国金融数据 API**
+>
+> 异步、类型安全、77 个预定义数据模型覆盖 12 大领域，derive macro 自动映射，开箱即用。
+
+**tushare-rs-pro** 是一个面向量化交易和金融数据分析的 Rust 客户端库，提供：
+
+- 🔒 编译期类型安全的 86 个 API 枚举，杜绝拼写错误
+- 📊 77 个预定义 struct 覆盖股票、基金、指数、债券、ETF、期货、期权、港股、美股、外汇、宏观经济、行业分类
+- ⚡ 基于 `tokio` + `reqwest` 的全异步架构
+- 🔄 生产级重试、限流、超时控制
+- 🏗️ `#[derive(DeriveFromTushareData)]` 宏自动将 API 响应映射到自定义 struct
 
 ## 目录
 
-- [✨ 特性](#-特性)
+- [✨ 特性亮点](#-特性亮点)
 - [📋 前置条件](#-前置条件)
 - [📦 安装](#-安装)
 - [🚀 快速开始](#-快速开始)
@@ -24,15 +35,16 @@
 - [📄 许可证](#-许可证)
 - [📞 支持](#-支持)
 
-## ✨ 特性
+## ✨ 特性亮点
 
-- 🚀 **异步**：为高性能异步操作而构建
-- 🔒 **类型安全**：强类型 API 枚举和全面的错误处理
-- 🔧 **开发者友好**：便捷的宏和构建器模式
-- 📊 **第三方类型支持**：内置支持 `rust_decimal`、`chrono`、`uuid` 和 `bigdecimal`
-- 🌍 **生产就绪**：全面的错误处理和安全特性
-- 📦 **77 个预定义模型**：覆盖股票、基金、指数、债券、ETF、期货、期权、港股、美股、外汇、宏观经济等 12 大领域，开箱即用
-- 🏗️ **86 个 API 枚举变体**：编译期类型安全，杜绝 API 名称拼写错误
+| 特性 | 说明 |
+|------|------|
+| 🚀 异步 | 基于 `tokio` + `reqwest`，高性能并发请求 |
+| 🔒 类型安全 | 86 个 `Api` 枚举变体，编译期保证 API 名称正确 |
+| 📦 预定义模型 | 77 个 struct 覆盖 12 大领域，`#[derive]` 自动映射 |
+| 🔄 生产就绪 | 限流、指数退避重试、超时、全面错误处理 |
+| 📊 第三方类型 | 可选支持 `rust_decimal`、`chrono`、`uuid`、`bigdecimal` |
+| 🏗️ 开发者友好 | 宏和构建器模式，自定义 struct 几行代码搞定 |
 
 ## 📋 前置条件
 
