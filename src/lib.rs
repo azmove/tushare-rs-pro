@@ -105,8 +105,8 @@ pub use utils::response_to_vec;
 
 // Macros are automatically exported at the crate root via #[macro_export]
 
-// Re-export procedural macros from tushare-derive
-pub use tushare_derive::FromTushareData as DeriveFromTushareData;
+// Re-export procedural macros from tushare-rs-pro-derive
+pub use tushare_rs_pro_derive::FromTushareData as DeriveFromTushareData;
 
 // Re-export serde_json for user convenience
 pub use serde_json;
