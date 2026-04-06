@@ -146,15 +146,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### 3. 使用 TushareClientEx（限流 + 自动重试）
 
 ```rust
-use tushare_api::{TushareClientEx, Api, TushareEntityList, request};
+use std::time::Duration;
+use tushare_api::{TushareClient, TushareClientEx, RetryConfig, Api, TushareEntityList, request};
 use tushare_api::models::IncomeModel;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // ClientEx 支持：每分钟最多 N 次请求 + 失败自动重试
-    let client = TushareClientEx::from_env()?
-        .with_max_retry(3)
-        .with_rate_limit(60);  // 每分钟 60 次
+    let inner = TushareClient::from_env()?;
+
+    // 包装为 ClientEx：限流 + 指数退避重试
+    let client = TushareClientEx::new(inner)
+        .with_api_min_interval(Api::Income, Duration::from_secs(1)) // 同一 API 至少间隔 1 秒
+        .with_retry_config(RetryConfig {
+            max_retries: 3,
+            base_delay: Duration::from_millis(200),
+            max_delay: Duration::from_secs(5),
+        });
 
     let req = request!(Api::Income, {
         "ts_code" => "000001.SZ",
@@ -163,7 +170,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "ts_code", "ann_date", "end_date", "revenue", "n_income"
     ]);
 
-    let data: TushareEntityList<IncomeModel> = client.call_api_as(req).await?;
+    let data: TushareEntityList<IncomeModel> = client.call_api_as(&req).await?;
     
     for d in data.iter() {
         println!("{} 营收:{:?} 净利润:{:?}", 

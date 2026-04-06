@@ -74,7 +74,7 @@ pub mod utils;
 // Re-export main types for convenience
 pub use api::Api;
 pub use client::{HttpClientConfig, TushareClient};
-pub use client_ex::TushareClientEx;
+pub use client_ex::{RetryConfig, TushareClientEx};
 pub use error::{TushareError, TushareResult};
 pub use logging::{LogConfig, LogLevel, Logger};
 pub use traits::{FromOptionalTushareValue, FromTushareData, FromTushareValue};
