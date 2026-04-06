@@ -1100,6 +1100,14 @@ cargo run --example logging_example
 cargo run --example tracing_example --features tracing
 ```
 
+## 🙏 致谢
+
+本项目基于以下优秀的开源项目构建：
+
+- **[rock117/tushare-api](https://github.com/rock117/tushare-api)** — 核心 SDK 架构、derive 宏系统、HTTP 客户端、重试机制等均源自此项目。感谢 [@rock117](https://github.com/rock117) 设计了优雅的 `DeriveFromTushareData` 宏和完善的 API 抽象层。
+- **[kehanzzz/tushare-sdk](https://github.com/kehanzzz/tushare-sdk)** — 77 个预定义数据模型的字段定义参考了此项目。感谢 [@kehanzzz](https://github.com/kehanzzz) 整理了覆盖 12 个领域的完整数据结构。
+- **[Tushare Pro](https://tushare.pro)** — 提供丰富的中国金融数据 API 服务。所有模型字段已对照官方文档逐一验证。
+
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 详情请参阅 [LICENSE](LICENSE) 文件。
@@ -1107,5 +1115,5 @@ cargo run --example tracing_example --features tracing
 ## 📞 支持
 
 - 📖 [文档](https://docs.rs/tushare-api)
-- 🐛 [问题跟踪](https://github.com/rock117/tushare-api/issues)
-- 💬 [讨论](https://github.com/rock117/tushare-api/discussions)
+- 🐛 [问题跟踪](https://github.com/azmove/tushare-rs-pro/issues)
+- 💬 [讨论](https://github.com/azmove/tushare-rs-pro/discussions)
