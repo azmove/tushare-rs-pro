@@ -1,8 +1,8 @@
 # 🦀 tushare-rs-pro — Tushare Pro API Rust SDK
 
 [![CI](https://github.com/azmove/tushare-rs-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/azmove/tushare-rs-pro/actions)
-[![Crates.io](https://img.shields.io/crates/v/tushare-api.svg)](https://crates.io/crates/tushare-api)
-[![Documentation](https://docs.rs/tushare-api/badge.svg)](https://docs.rs/tushare-api)
+[![Crates.io](https://img.shields.io/crates/v/tushare-rs-pro.svg)](https://crates.io/crates/tushare-rs-pro)
+[![Documentation](https://docs.rs/tushare-rs-pro/badge.svg)](https://docs.rs/tushare-rs-pro)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Rust SDK for [Tushare Pro](https://tushare.pro/) — 中国金融数据 API**
@@ -58,7 +58,15 @@
 
 ## 📦 安装
 
-### 方式一：作为依赖引入（推荐）
+### 方式一：从 crates.io 安装（推荐）
+
+```toml
+[dependencies]
+tushare-rs-pro = "0.1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+### 方式二：从 GitHub 安装
 
 ```toml
 [dependencies]
