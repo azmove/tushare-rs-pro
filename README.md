@@ -1199,25 +1199,47 @@ pub struct MyCustomStock {
 
 ## 🧪 运行示例
 
+项目内置 15 个完整示例，涵盖从基础用法到高级特性。
+
 ```bash
-# 设置您的 token
+# 设置 Token
 export TUSHARE_TOKEN="your_token_here"
-
-# 运行基础示例
-cargo run --example basic_usage
-
-# 运行预定义模型示例（推荐 ✨）
-cargo run --example models_usage
-
-# 运行派生宏转换示例
-cargo run --example macro_conversion_example
-
-# 运行日志示例
-cargo run --example logging_example
-
-# 运行 tracing 示例（需要 tracing 特性）
-cargo run --example tracing_example --features tracing
 ```
+
+### 入门示例
+
+| 示例 | 命令 | 说明 |
+|------|------|------|
+| 基础用法 | `cargo run --example basic_usage` | 最简单的 API 调用 |
+| 环境变量 | `cargo run --example env_usage` | 从环境变量读取 Token |
+| 预定义模型 ✨ | `cargo run --example models_usage` | 使用 77 个内置模型 |
+
+### 数据转换
+
+| 示例 | 命令 | 说明 |
+|------|------|------|
+| 派生宏转换 | `cargo run --example macro_conversion_example` | `#[derive(DeriveFromTushareData)]` 用法 |
+| 股票转换 | `cargo run --example stock_conversion_example` | 股票数据 struct 映射 |
+| 简单转换 | `cargo run --example simple_stock_conversion` | 最简转换示例 |
+| 自定义类型 | `cargo run --example custom_type_example` | 字段映射、skip、Option 等 |
+| 调试转换 | `cargo run --example debug_custom_type` | 调试 derive 宏生成的代码 |
+
+### 高级特性
+
+| 示例 | 命令 | 说明 |
+|------|------|------|
+| 泛型 API | `cargo run --example generic_api_usage` | 泛型请求封装 |
+| 分页 | `cargo run --example generic_pagination_example` | 分页查询模式 |
+| 日期格式 | `cargo run --example date_format_attribute_example` | `#[tushare(date_format)]` 用法 |
+| 自定义日期 | `cargo run --example custom_date_format_example` | chrono 日期类型支持 |
+| 第三方类型 | `cargo run --example third_party_types_example` | rust_decimal / chrono / uuid 等 |
+
+### 日志与追踪
+
+| 示例 | 命令 | 说明 |
+|------|------|------|
+| 日志 | `cargo run --example logging_example` | env_logger 配置 |
+| Tracing | `cargo run --example tracing_example --features tracing` | tracing 生态集成 |
 
 ## 🙏 致谢
 
